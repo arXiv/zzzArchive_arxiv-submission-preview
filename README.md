@@ -4,7 +4,7 @@ Clearinghouse for PDFs used during the submission process.
 
 ## Requirements
 
-1. Provide a ``preview`` resource via RESTful API. Resources should be identified by an URL-safe base64-encoded md5 hash of the source package from which it was generated, because:
+1. Provide a ``preview`` resource via RESTful API. Resources should be identified by the source package ID and an URL-safe base64-encoded md5 hash of the source package from which it was generated, because:
 
    - Consumers should be able to specifically request a preview associated with a specific state of a submission upload workspace.
    - Not using submission ID, because compilation is submission-agnostic.
@@ -12,9 +12,9 @@ Clearinghouse for PDFs used during the submission process.
 
 2. The API must support the following semantics:
 
-- GET ``preview/<hash>`` - Returns a JSON document describing the preview (creation time, creator, format, etc).
-- GET ``preview/<hash>/content`` - Returns the preview content (e.g. as ``application/pdf``).
-- PUT ``preview/<hash>`` - Creates a new preview resource at the specified key. 
+- GET ``preview/<source id>/<hash>`` - Returns a JSON document describing the preview (creation time, creator, format, etc).
+- GET ``preview/<source id>/<hash>/content`` - Returns the preview content (e.g. as ``application/pdf``).
+- PUT ``preview/<source id>/<hash>`` - Creates a new preview resource at the specified key. 
 
   - The body of the request should be the preview content, and headers should identify content type. 
   - Metadata for the resource are automatically created based on the authn context and resource content.

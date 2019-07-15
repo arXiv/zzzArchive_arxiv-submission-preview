@@ -10,6 +10,8 @@ pylint = "*"
 pydocstyle = "*"
 sphinx = "*"
 mypy = "*"
+coverage = "*"
+coveralls = "*"
 
 [packages]
 arxiv-base = "*"

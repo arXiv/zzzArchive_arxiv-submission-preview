@@ -3,6 +3,8 @@
 from typing import NamedTuple, Optional, IO
 from datetime import datetime
 
+PDF = 'application/pdf'
+
 
 class Preview(NamedTuple):
     """A submission preview."""
@@ -25,11 +27,11 @@ class Metadata(NamedTuple):
     added: datetime
     """Datetime when the preview was added."""
 
-    size_bytes: int
-    """Size of the preview object in bytes."""
-
     checksum: str
     """URL-safe base64-encoded MD5 hash of the preview object."""
+
+    size_bytes: int
+    """Size of the preview."""
 
 
 class Content(NamedTuple):
@@ -41,6 +43,3 @@ class Content(NamedTuple):
 
     For example, a filepointer opened with ``rb``.
     """
-
-    content_type: str = 'application/pdf'
-    """Content type of the preview."""

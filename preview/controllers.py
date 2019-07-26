@@ -53,9 +53,7 @@ def get_preview_metadata(source_id: str, checksum: str) -> Response:
     except store.DoesNotExist as e:
         raise NotFound('No preview available') from e
 
-    data = {'added': metadata.added,
-            'size_bytes': metadata.size_bytes,
-            'checksum': metadata.checksum}
+    data = {'added': metadata.added, 'checksum': metadata.checksum}
     headers = {'ETag': metadata.checksum}
     return data, HTTPStatus.OK, headers
 
@@ -130,13 +128,10 @@ def deposit_preview(source_id: str, checksum: str, stream: IO[bytes],
         Headers to add to the response.
 
     """
-    if content_type is None:
-        raise BadRequest('Must specify content type')
+    if content_type is None or content_type != 'application/pdf':
+        raise BadRequest('Invalid content type')
     st = store.PreviewStore.current_session()
-    preview = Preview(source_id,
-                      checksum,
-                      content=Content(stream=stream,
-                                      content_type=content_type))
+    preview = Preview(source_id, checksum, content=Content(stream=stream))
     try:
         preview = st.deposit(preview)
     except store.DepositFailed as e:
@@ -147,8 +142,7 @@ def deposit_preview(source_id: str, checksum: str, stream: IO[bytes],
         logger.error('Preview metadata not set')
         raise InternalServerError('An error occurred when storing preview')
 
-    response_data = {'size_bytes': preview.metadata.size_bytes,
-                     'checksum': preview.metadata.checksum,
+    response_data = {'checksum': preview.metadata.checksum,
                      'added': preview.metadata.added}
     headers = {'ETag': preview.metadata.checksum}
     return response_data, HTTPStatus.CREATED, headers

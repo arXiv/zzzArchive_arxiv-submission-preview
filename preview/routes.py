@@ -1,6 +1,6 @@
 """Provides the API blueprint for the submission preview service."""
 
-from typing import Dict, Any
+from typing import Dict, Any, IO
 
 from flask import Blueprint, Response, request, make_response, send_file
 from flask.json import jsonify
@@ -47,9 +47,9 @@ def get_preview_content(source_id: str, checksum: str) -> Response:
 def deposit_preview(source_id: str, checksum: str) -> Response:
     """Creates a new preview resource at the specified key."""
     content_type = request.headers.get('Content-type')
+    stream: IO[bytes] = request.stream
     data, code, headers = controllers.deposit_preview(source_id, checksum,
-                                                      request.stream,
-                                                      content_type)
+                                                      stream, content_type)
     response: Response = make_response(jsonify(data), code, headers)
     return response
 

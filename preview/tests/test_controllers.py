@@ -75,8 +75,8 @@ class TestDepositPreview(TestCase):
             return Preview(source_id=obj.source_id,
                            checksum=obj.checksum,
                            metadata=Metadata(added=added,
-                                             size_bytes=1_234,
-                                             checksum='foopdfchex=='))
+                                             checksum='foopdfchex==',
+                                             size_bytes=1_234))
 
         mock_store.deposit.side_effect = mock_deposit
         mock_current_session.return_value = mock_store
@@ -87,8 +87,7 @@ class TestDepositPreview(TestCase):
         self.assertEqual(code, status.CREATED, 'Returns 201 Created')
         self.assertEqual(headers['ETag'], 'foopdfchex==',
                          'ETag is set to the preview checksum')
-        self.assertDictEqual(data, {'size_bytes': 1_234,
-                                    'checksum': 'foopdfchex==',
+        self.assertDictEqual(data, {'checksum': 'foopdfchex==',
                                     'added': added},
                              'Returns metadata about the preview')
 
@@ -119,11 +118,8 @@ class TestRetrievePreviewMetadata(TestCase):
         """The requested preview does exist."""
         added = datetime.now(UTC)
         mock_store = mock.MagicMock()
-        mock_store.get_metadata.return_value = Metadata(
-            added=added,
-            checksum='foopdfchex==',
-            size_bytes=1_234
-        )
+        mock_store.get_metadata.return_value = \
+            Metadata(added=added, checksum='foopdfchex==', size_bytes=1_234)
         mock_current_session.return_value = mock_store
 
         data, code, headers = \
@@ -131,8 +127,7 @@ class TestRetrievePreviewMetadata(TestCase):
         self.assertEqual(code, status.OK, 'Returns 200 OK')
         self.assertEqual(headers['ETag'], 'foopdfchex==',
                          'ETag is set to the preview checksum')
-        self.assertDictEqual(data, {'size_bytes': 1_234,
-                                    'checksum': 'foopdfchex==',
+        self.assertDictEqual(data, {'checksum': 'foopdfchex==',
                                     'added': added},
                              'Returns metadata about the preview')
 
@@ -164,15 +159,9 @@ class TestRetrievePreviewContent(TestCase):
         mock_store.get_preview.return_value = Preview(
             source_id=self.source_id,
             checksum=self.checksum,
-            metadata=Metadata(
-                added=added,
-                checksum='foopdfchex==',
-                size_bytes=1_234
-            ),
-            content=Content(
-                stream=io.BytesIO(b'fakecontent'),
-                content_type='application/pdf'
-            )
+            metadata=Metadata(added=added, checksum='foopdfchex==',
+                              size_bytes=1_234),
+            content=Content(stream=io.BytesIO(b'fakecontent'))
         )
         mock_current_session.return_value = mock_store
 
@@ -208,15 +197,9 @@ class TestRetrievePreviewContent(TestCase):
         mock_store.get_preview.return_value = Preview(
             source_id=self.source_id,
             checksum=self.checksum,
-            metadata=Metadata(
-                added=added,
-                checksum='foopdfchex==',
-                size_bytes=1_234
-            ),
-            content=Content(
-                stream=io.BytesIO(b'fakecontent'),
-                content_type='application/pdf'
-            )
+            metadata=Metadata(added=added, checksum='foopdfchex==',
+                              size_bytes=1_234),
+            content=Content(stream=io.BytesIO(b'fakecontent'))
         )
         mock_current_session.return_value = mock_store
 

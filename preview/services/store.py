@@ -30,7 +30,11 @@ Constraints
 from typing import IO, Tuple
 import boto3
 
-from ..domain import Content, Preview
+from ..domain import Content, Preview, Metadata
+
+
+class DoesNotExist(Exception):
+    """An attempt was made to retrieve a non-existant preview."""
 
 
 class DepositFailed(Exception):
@@ -47,4 +51,7 @@ class PreviewStore:
         ...
 
     def deposit(self, preview: Preview) -> Preview:
+        ...
+
+    def get_metadata(self, source_id: str, checksum: str) -> Metadata:
         ...

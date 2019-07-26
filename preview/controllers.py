@@ -4,7 +4,8 @@ from typing import Tuple, Any, Dict, List, IO, Union, Optional
 from http import HTTPStatus
 
 from werkzeug.datastructures import MultiDict
-from werkzeug.exceptions import InternalServerError, BadRequest, Conflict
+from werkzeug.exceptions import InternalServerError, BadRequest, Conflict, \
+    NotFound
 
 from arxiv.base import logging
 from .services import store
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 Response = Tuple[Union[Dict[str, Any], IO[bytes]], HTTPStatus, Dict[str, str]]
 
 
-def service_status(params: MultiDict) -> Response:
+def service_status(*args: Any, **kwargs: Any) -> Response:
     """
     Handle requests for the service status endpoint.
 
@@ -26,7 +27,37 @@ def service_status(params: MultiDict) -> Response:
 
 
 def get_preview_metadata(source_id: str, checksum: str) -> Response:
-    ...
+    """
+    Handle request for preview metadata.
+
+    Parameters
+    ----------
+    source_id : str
+        Unique identifier for the source package.
+    checksum : str
+        State of the source package to which this preview corresponds.
+
+    Returns
+    -------
+    dict
+        Metadata about the deposit.
+    int
+        HTTP status code.
+    dict
+        Headers to add to the response.
+
+    """
+    st = store.PreviewStore.current_session()
+    try:
+        metadata = st.get_metadata(source_id, checksum)
+    except store.DoesNotExist as e:
+        raise NotFound('No preview available') from e
+
+    data = {'added': metadata.added,
+            'size_bytes': metadata.size_bytes,
+            'checksum': metadata.checksum}
+    headers = {'ETag': metadata.checksum}
+    return data, HTTPStatus.OK, headers
 
 
 def get_preview_content(source_id: str, checksum: str) -> Response:
@@ -46,6 +77,8 @@ def deposit_preview(source_id: str, checksum: str, stream: IO[bytes],
         State of the source package to which this preview corresponds.
     stream : io.BytesIO
         Byte-stream from the request body.
+    content_type : str
+        Value of the ``Content-type`` request header.
 
     Returns
     -------

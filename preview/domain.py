@@ -13,11 +13,23 @@ class Preview(NamedTuple):
     checksum: str
     """URL-safe base64-encoded MD5 hash of the source package."""
 
-    added: datetime
-    """Datetime when the preview was added."""
+    metadata: Optional['Metadata'] = None
 
     content: Optional['Content'] = None
     """The preview content, if available."""
+
+
+class Metadata(NamedTuple):
+    """Metadata about the preview."""
+
+    added: datetime
+    """Datetime when the preview was added."""
+
+    size_bytes: int
+    """Size of the preview object in bytes."""
+
+    checksum: str
+    """URL-safe base64-encoded MD5 hash of the preview object."""
 
 
 class Content(NamedTuple):
@@ -30,5 +42,5 @@ class Content(NamedTuple):
     For example, a filepointer opened with ``rb``.
     """
 
-    content_type: str = 'application/json'
+    content_type: str = 'application/pdf'
     """Content type of the preview."""

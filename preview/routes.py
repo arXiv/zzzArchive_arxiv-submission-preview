@@ -44,8 +44,10 @@ def get_preview_content(source_id: str, checksum: str) -> Response:
 @api.route('/preview/<source_id>/<checksum>/content', methods=['PUT'])
 def deposit_preview(source_id: str, checksum: str) -> Response:
     """Creates a new preview resource at the specified key."""
+    content_type = request.headers.get('Content-type')
     data, code, headers = controllers.deposit_preview(source_id, checksum,
-                                                      request.stream)
+                                                      request.stream,
+                                                      content_type)
     response: Response = make_response(jsonify(data), code, headers)
     return response
 

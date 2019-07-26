@@ -34,7 +34,9 @@ def get_preview_metadata(source_id: str, checksum: str) -> Response:
 @api.route('/preview/<source_id>/<checksum>/content', methods=['GET'])
 def get_preview_content(source_id: str, checksum: str) -> Response:
     """Returns the preview content (e.g. as ``application/pdf``)."""
-    data, code, headers = controllers.get_preview_content(source_id, checksum)
+    none_match = request.headers.get('If-None-Match')
+    data, code, headers = \
+        controllers.get_preview_content(source_id, checksum, none_match)
     response: Response = send_file(data, mimetype=headers['Content-type'])
     response = _update_headers(response, headers)
     response.status_code = code

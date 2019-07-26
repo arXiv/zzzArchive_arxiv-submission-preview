@@ -105,9 +105,10 @@ class TestPreviewContent(APITest):
             status.OK,
             headers
         )
-        response = self.client.get('/preview/12345/asdf1234==/content')
+        response = self.client.get('/preview/12345/asdf1234==/content',
+                                   headers={'If-None-Match': 'foomatch'})
 
-        mock_controller.assert_called_with('12345', 'asdf1234==')
+        mock_controller.assert_called_with('12345', 'asdf1234==', 'foomatch')
         self.assertEqual(response.status_code, status.OK,
                          'Returns with status code set by controller')
         self.assertEqual(response.headers['Content-type'],

@@ -27,4 +27,24 @@ Constraints
 
 
 """
+from typing import IO, Tuple
 import boto3
+
+from ..domain import Content, Preview
+
+
+class DepositFailed(Exception):
+    """An attempt to deposit a preview was not successful."""
+
+
+class PreviewAlreadyExists(Exception):
+    """An attempt to deposit an existing preview was made."""
+
+
+class PreviewStore:
+    @classmethod
+    def current_session(cls) -> 'PreviewStore':
+        ...
+
+    def deposit(self, preview: Preview) -> Preview:
+        ...

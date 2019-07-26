@@ -149,7 +149,7 @@ class TestPreviewContent(APITest):
             headers={'Content-type': 'application/pdf'}
         )
 
-        source_id, checksum, stream = mock_controller.call_args[0]
+        source_id, checksum, stream, ctype = mock_controller.call_args[0]
         self.assertEqual(source_id, '12345')
         self.assertEqual(checksum, 'asdf1234==')
         self.assertEqual(stream.read(), b'fakecontent')

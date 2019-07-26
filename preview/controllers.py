@@ -13,8 +13,8 @@ from .domain import Preview, Metadata, Content
 
 logger = logging.getLogger(__name__)
 
-
-Response = Tuple[Union[Dict[str, Any], IO[bytes]], HTTPStatus, Dict[str, str]]
+ResponseData = Optional[Union[Dict[str, Any], IO[bytes]]]
+Response = Tuple[ResponseData, HTTPStatus, Dict[str, str]]
 
 
 def service_status(*args: Any, **kwargs: Any) -> Response:
@@ -60,8 +60,48 @@ def get_preview_metadata(source_id: str, checksum: str) -> Response:
     return data, HTTPStatus.OK, headers
 
 
-def get_preview_content(source_id: str, checksum: str) -> Response:
-    ...
+def get_preview_content(source_id: str, checksum: str,
+                        none_match: Optional[str] = None) -> Response:
+    """
+    Handle request for preview content.
+
+    Parameters
+    ----------
+    source_id : str
+        Unique identifier for the source package.
+    checksum : str
+        State of the source package to which this preview corresponds.
+    none_match : str or None
+        If not None, will return 304 Not Modified if the current preview
+        checksum matches.
+
+    Returns
+    -------
+    io.BytesIO
+        Stream containing the preview content.
+    int
+        HTTP status code.
+    dict
+        Headers to add to the response.
+
+    """
+    st = store.PreviewStore.current_session()
+    try:
+        if none_match is not None:
+            preview_checksum = st.get_preview_checksum(source_id, checksum)
+            if none_match == preview_checksum:
+                headers = {'ETag': preview_checksum}
+                return None, HTTPStatus.NOT_MODIFIED, headers
+
+        preview = st.get_preview(source_id, checksum)
+    except store.DoesNotExist as e:
+        raise NotFound('No preview available') from e
+
+    if preview.metadata is None or preview.content is None:
+        raise InternalServerError('Unexpected error loading content')
+
+    headers = {'ETag': preview.metadata.checksum}
+    return preview.content.stream, HTTPStatus.OK, headers
 
 
 def deposit_preview(source_id: str, checksum: str, stream: IO[bytes],

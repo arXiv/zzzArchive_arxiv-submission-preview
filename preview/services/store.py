@@ -55,3 +55,11 @@ class PreviewStore:
 
     def get_metadata(self, source_id: str, checksum: str) -> Metadata:
         ...
+
+    def get_preview_checksum(self, source_id: str, checksum: str) -> str:
+        """Get the preview content checksum via HEAD request."""
+        ...
+
+    def get_preview(self, source_id: str, checksum: str) -> Preview:
+        """Get the preview including its content."""
+        ...

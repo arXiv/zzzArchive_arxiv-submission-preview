@@ -1,6 +1,8 @@
 language: python
 cache: pip
 sudo: required
+env:
+  - MIN_SCORE=9 BOTO_CONFIG=/dev/null   # This is the dumbest thing. https://github.com/travis-ci/travis-ci/issues/7940
 services:
   - docker
 os:

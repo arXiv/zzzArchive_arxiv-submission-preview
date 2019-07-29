@@ -7,11 +7,34 @@ from http import HTTPStatus as status
 
 from pytz import UTC
 from werkzeug.exceptions import BadRequest, InternalServerError, Conflict, \
-    NotFound
+    NotFound, ServiceUnavailable
 
 from ..services import store
 from ..domain import Preview, Metadata, Content
 from .. import controllers
+
+
+class TestStatusEndpoint(TestCase):
+    """Status endpoint should reflect availability of storage integration."""
+
+    @mock.patch(f'{controllers.__name__}.store.PreviewStore.current_session')
+    def test_store_is_unavailable(self, mock_current_session):
+        """Storage service is unavailable."""
+        mock_store = mock.MagicMock()
+        mock_store.is_available.return_value = False
+        mock_current_session.return_value = mock_store
+        with self.assertRaises(ServiceUnavailable):
+            controllers.service_status()
+
+    @mock.patch(f'{controllers.__name__}.store.PreviewStore.current_session')
+    def test_store_is_available(self, mock_current_session):
+        """Storage service is available."""
+        mock_store = mock.MagicMock()
+        mock_store.is_available.return_value = True
+        mock_current_session.return_value = mock_store
+        _, code, _ = controllers.service_status()
+        self.assertEqual(code, status.OK)
+
 
 
 class TestDepositPreview(TestCase):

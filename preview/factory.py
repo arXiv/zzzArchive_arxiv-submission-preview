@@ -7,6 +7,7 @@ from werkzeug.exceptions import HTTPException, Forbidden, Unauthorized, \
 from arxiv.base import Base, logging
 from arxiv.base.middleware import wrap, request_logs
 
+from .services import PreviewStore
 from . import routes
 
 
@@ -17,6 +18,10 @@ def create_app() -> Flask:
     Base(app)
     app.register_blueprint(routes.api)
     register_error_handlers(app)
+
+    PreviewStore.init_app(app)
+    with app.app_context():
+        PreviewStore.current_session().initialize()
     return app
 
 

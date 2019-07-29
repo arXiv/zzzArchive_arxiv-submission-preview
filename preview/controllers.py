@@ -24,7 +24,7 @@ def service_status(*args: Any, **kwargs: Any) -> Response:
     Returns ``200 OK`` if the service is up and ready to handle requests.
     """
     st = store.PreviewStore.current_session()
-    if not st.is_available:
+    if not st.is_available():
         raise ServiceUnavailable('Cannot connect to store')
     return {'iam': 'ok'}, HTTPStatus.OK, {}
 

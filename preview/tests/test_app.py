@@ -164,3 +164,31 @@ class TestDeposit(TestCase):
         self.assertEqual(response.headers['ETag'],
                          '7b0ae08001dd093e79335b947f028b10',
                          'Includes ETag header with checksum as well')
+
+    @mock_s3
+    def test_retrieve_with_none_match_matches(self):
+        """Retrieve preview content with If-None-Match header."""
+        app = create_app()
+        client = app.test_client()
+        content = io.BytesIO(b'foocontent')
+        resp = client.put('/1234/foohash1==/content', data=content,
+                          headers={'Content-type': 'application/pdf'})
+        headers = {'If-None-Match': resp.headers['ETag']}
+        response = client.get('/1234/foohash1==/content', headers=headers)
+
+        self.assertEqual(response.status_code, status.NOT_MODIFIED,
+                         'Returns 304 Not Modified')
+
+    @mock_s3
+    def test_retrieve_with_none_match_no_match(self):
+        """Retrieve preview content with If-None-Match header."""
+        app = create_app()
+        client = app.test_client()
+        content = io.BytesIO(b'foocontent')
+        resp = client.put('/1234/foohash1==/content', data=content,
+                          headers={'Content-type': 'application/pdf'})
+        headers = {'If-None-Match': resp.headers['ETag'] + 'foo'}
+        response = client.get('/1234/foohash1==/content', headers=headers)
+
+        self.assertEqual(response.status_code, status.OK, 'Returns 200 OK')
+

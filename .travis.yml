@@ -18,3 +18,4 @@ after_success:
   - "./tests/lint.sh preview"
   - "./tests/style.sh preview"
   - "./tests/type-check.sh preview"
+  - "./tests/schema.sh schema/openapi.yaml"

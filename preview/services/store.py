@@ -51,12 +51,16 @@ logger = logging.getLogger(__name__)
 
 
 class HeadResponse(TypedDict):
+    """Expected response to HEAD object requests."""
+
     ETag: str
     LastModified: datetime
     ContentLength: int
 
 
 class GetResponse(TypedDict):
+    """Expected response to GET object requests."""
+
     ETag: str
     LastModified: datetime
     ContentLength: int
@@ -74,11 +78,11 @@ class StreamMonitor(io.BytesIO):
         super().__init__()
 
     def seekable(self) -> Literal[False]:
-        """This is a non-seekable stream."""
+        """Indicate that this is a non-seekable stream."""
         return False
 
     def readable(self) -> Literal[True]:
-        """But it *is* readable."""
+        """Indicate that it *is* a readable stream."""
         return True
 
     def read(self, size: Optional[int] = -1) -> bytes:
@@ -318,6 +322,25 @@ class PreviewStore:
                                          size_bytes=monitor.size_bytes))
 
     def get_metadata(self, source_id: str, checksum: str) -> Metadata:
+        """
+        Retrieve :class:`.Metadata` about a :class:`.Preview`.
+
+        Parameters
+        ----------
+        source_id : str
+            Identifier of the source package.
+        checksum: str
+            Checksum of the source package.
+
+        Returns
+        -------
+        :class:`.Metadata`
+
+        Raises
+        ------
+        :class:`.DoesNotExist`
+
+        """
         key = self._key(source_id, checksum)
         try:
             resp: HeadResponse = self.client.head_object(

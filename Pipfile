@@ -12,6 +12,7 @@ sphinx = "*"
 mypy = "*"
 coverage = "*"
 coveralls = "*"
+openapi-spec-validator = "*"
 
 [packages]
 arxiv-base = "*"

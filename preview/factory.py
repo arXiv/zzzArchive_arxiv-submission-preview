@@ -22,7 +22,7 @@ def create_app() -> Flask:
     register_error_handlers(app)
 
     PreviewStore.init_app(app)
-    with app.app_context():
+    with app.app_context():  # type: ignore
         PreviewStore.current_session().initialize()
     return app
 

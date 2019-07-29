@@ -14,6 +14,7 @@ class TestStorePreview(TestCase):
 
     @mock.patch(f'{store.__name__}.get_application_config')
     def setUp(self, mock_get_config):
+        """Get a new session with the storage."""
         mock_get_config.return_value = {
             'S3_BUCKET': 'foobucket',
             'S3_VERIFY': False,

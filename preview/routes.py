@@ -51,7 +51,7 @@ def deposit_preview(source_id: str, checksum: str) -> Response:
     """Creates a new preview resource at the specified key."""
     content_type = request.headers.get('Content-type')
     overwrite = bool(request.headers.get('Overwrite', 'false') == 'true')
-    stream: IO[bytes] = request.stream   # InputStream
+    stream: IO[bytes] = request.stream   # type: ignore
     data, code, headers = controllers.deposit_preview(source_id, checksum,
                                                       stream, content_type,
                                                       overwrite)

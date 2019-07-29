@@ -80,7 +80,7 @@ class TestDepositPreview(TestCase):
         """The store service returns malformed data."""
         mock_store = mock.MagicMock()
         # Doesn't add metadata.
-        mock_store.deposit.side_effect = lambda obj: obj
+        mock_store.deposit.side_effect = lambda obj, **kw: obj
         mock_current_session.return_value = mock_store
 
         with self.assertRaises(InternalServerError):
@@ -93,7 +93,7 @@ class TestDepositPreview(TestCase):
         mock_store = mock.MagicMock()
         added = datetime.now(UTC)
 
-        def mock_deposit(obj):
+        def mock_deposit(obj, overwrite):
             """Deposit implementation sets metadata on Preview."""
             return Preview(source_id=obj.source_id,
                            checksum=obj.checksum,

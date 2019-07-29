@@ -101,12 +101,14 @@ def get_preview_content(source_id: str, checksum: str,
     if preview.metadata is None or preview.content is None:
         raise InternalServerError('Unexpected error loading content')
 
-    headers = {'ETag': preview.metadata.checksum}
+    headers = {'ETag': preview.metadata.checksum,
+               'Content-type': 'application/pdf'}
     return preview.content.stream, HTTPStatus.OK, headers
 
 
 def deposit_preview(source_id: str, checksum: str, stream: IO[bytes],
-                    content_type: Optional[str]) -> Response:
+                    content_type: Optional[str],
+                    overwrite: bool = False) -> Response:
     """
     Handle a request to deposit the content of a preview.
 
@@ -120,6 +122,8 @@ def deposit_preview(source_id: str, checksum: str, stream: IO[bytes],
         Byte-stream from the request body.
     content_type : str
         Value of the ``Content-type`` request header.
+    overwrite : bool
+        Value of the ``Overwrite`` request header.
 
     Returns
     -------
@@ -132,11 +136,12 @@ def deposit_preview(source_id: str, checksum: str, stream: IO[bytes],
 
     """
     if content_type is None or content_type != 'application/pdf':
-        raise BadRequest('Invalid content type')
+        logger.info('Request is missing content-type header')
+        raise BadRequest(f'Invalid content type: {content_type}')
     st = store.PreviewStore.current_session()
     preview = Preview(source_id, checksum, content=Content(stream=stream))
     try:
-        preview = st.deposit(preview)
+        preview = st.deposit(preview, overwrite=overwrite)
     except store.DepositFailed as e:
         raise InternalServerError('An unexpected error occurred') from e
     except store.PreviewAlreadyExists as e:

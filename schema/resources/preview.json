@@ -1,0 +1,17 @@
+{
+    "title": "Submission preview",
+    "description": "Metadata about a submission preview.",
+    "type": "object",
+    "properties": {
+        "added": {
+            "type": "string",
+            "format": "date"
+        },
+        "checksum": {
+            "type": "string"
+        },
+        "size_bytes": {
+            "type": "number"
+        }
+    }
+}

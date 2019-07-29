@@ -1,9 +1,12 @@
 """App tests."""
 
 import io
+import json
 from unittest import TestCase, mock
 from http import HTTPStatus as status
+
 from moto import mock_s3
+import jsonschema
 
 from ..factory import create_app
 from ..services import PreviewStore, store
@@ -34,6 +37,11 @@ class TestServiceStatus(TestCase):
 
 class TestDeposit(TestCase):
     """Test depositing and retrieving a preview."""
+
+    def setUp(self):
+        """Load the JSON schema for response data."""
+        with open('schema/resources/preview.json') as f:
+            self.schema = json.load(f)
 
     @mock_s3
     def test_deposit_without_content_type(self):
@@ -74,6 +82,11 @@ class TestDeposit(TestCase):
         self.assertEqual(response_data['checksum'], response.headers['ETag'],
                          'Includes ETag header with checksum as well')
 
+        try:
+            jsonschema.validate(response_data, self.schema)
+        except jsonschema.ValidationError as e:
+            self.fail(f'Failed to validate: {e}')
+
     @mock_s3
     def test_deposit_already_exists(self):
         """Deposit a preview that already exists."""
@@ -102,6 +115,11 @@ class TestDeposit(TestCase):
                                        'Overwrite': 'true'})
         self.assertEqual(response.status_code, status.CREATED,
                          'Returns 201 Created')
+        response_data = response.get_json()
+        try:
+            jsonschema.validate(response_data, self.schema)
+        except jsonschema.ValidationError as e:
+            self.fail(f'Failed to validate: {e}')
 
     @mock_s3
     def test_retrieve_metadata(self):
@@ -121,6 +139,11 @@ class TestDeposit(TestCase):
                          'Returns S3 checksum of the preview content')
         self.assertEqual(response_data['checksum'], response.headers['ETag'],
                          'Includes ETag header with checksum as well')
+
+        try:
+            jsonschema.validate(response_data, self.schema)
+        except jsonschema.ValidationError as e:
+            self.fail(f'Failed to validate: {e}')
 
     @mock_s3
     def test_retrieve_nonexistant_metadata(self):

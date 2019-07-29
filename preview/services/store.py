@@ -266,7 +266,7 @@ class PreviewStore:
     def _key(self, source_id: str, checksum: str) -> str:
         return f'preview/{source_id}/{checksum}/{source_id}.pdf'
 
-    def deposit(self, preview: Preview) -> Preview:
+    def deposit(self, preview: Preview, overwrite: bool = False) -> Preview:
         """
         Deposit the content of a preview.
 
@@ -274,6 +274,10 @@ class PreviewStore:
         ----------
         preview : :class:`.Preview`
             The ``content`` member **must** be set.
+        overwrite : bool
+            If True (default is False), will overwrite an existing key.
+            Otherwise, if the key already exists, will raise
+            :class:`.PreviewAlreadyExists`.
 
         Returns
         -------
@@ -281,10 +285,22 @@ class PreviewStore:
             A fresh representation of ``preview``, with its ``metadata``
             member set.
 
+        Raises
+        ------
+        :class:`.PreviewAlreadyExists`
+            Raised if an attempt is made to write a preview, and ``overwrite``
+            is False.
+
         """
         if preview.content is None:
             raise DepositFailed('Content is missing')
 
+        if not overwrite:
+            try:
+                self.get_metadata(preview.source_id, preview.checksum)
+                raise PreviewAlreadyExists('Preview content already exists')
+            except DoesNotExist:
+                pass
         key = self._key(preview.source_id, preview.checksum)
         monitor = StreamMonitor(preview.content.stream)
         try:

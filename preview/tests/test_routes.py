@@ -56,7 +56,7 @@ class TestPreviewMetadata(APITest):
     def test_get_preview_metadata(self, mock_controller):
         """GET the preview metadata endpoint."""
         mock_controller.return_value = ({'foo': 'bar'}, status.OK, {})
-        response = self.client.get('/preview/12345/asdf1234==')
+        response = self.client.get('/12345/asdf1234==')
 
         mock_controller.assert_called_with('12345', 'asdf1234==')
         self.assertEqual(response.status_code, status.OK,
@@ -73,21 +73,21 @@ class TestPreviewMetadata(APITest):
     @mock.patch(f'{routes.__name__}.controllers.get_preview_metadata')
     def test_post_preview_metadata(self, mock_controller):
         """POST the preview metadata endpoint."""
-        response = self.client.post('/preview/12345/asdf1234==')
+        response = self.client.post('/12345/asdf1234==')
         self.assertEqual(response.status_code, status.METHOD_NOT_ALLOWED,
                          'POST method is 405 Method Not Allowed')
 
     @mock.patch(f'{routes.__name__}.controllers.get_preview_metadata')
     def test_put_preview_metadata(self, mock_controller):
         """PUT the preview metadata endpoint."""
-        response = self.client.put('/preview/12345/asdf1234==')
+        response = self.client.put('/12345/asdf1234==')
         self.assertEqual(response.status_code, status.METHOD_NOT_ALLOWED,
                          'PUT method is 405 Method Not Allowed')
 
     @mock.patch(f'{routes.__name__}.controllers.get_preview_metadata')
     def test_delete_preview_metadata(self, mock_controller):
         """DELETE the preview metadata endpoint."""
-        response = self.client.delete('/preview/12345/asdf1234==')
+        response = self.client.delete('/12345/asdf1234==')
         self.assertEqual(response.status_code, status.METHOD_NOT_ALLOWED,
                          'DELETE method is 405 Method Not Allowed')
 
@@ -105,7 +105,7 @@ class TestPreviewContent(APITest):
             status.OK,
             headers
         )
-        response = self.client.get('/preview/12345/asdf1234==/content',
+        response = self.client.get('/12345/asdf1234==/content',
                                    headers={'If-None-Match': 'foomatch'})
 
         mock_controller.assert_called_with('12345', 'asdf1234==', 'foomatch')
@@ -123,14 +123,14 @@ class TestPreviewContent(APITest):
     @mock.patch(f'{routes.__name__}.controllers.get_preview_content')
     def test_post_preview_content(self, mock_controller):
         """POST the preview content endpoint."""
-        response = self.client.post('/preview/12345/asdf1234==/content')
+        response = self.client.post('/12345/asdf1234==/content')
         self.assertEqual(response.status_code, status.METHOD_NOT_ALLOWED,
                          'POST method is 405 Method Not Allowed')
 
     @mock.patch(f'{routes.__name__}.controllers.get_preview_content')
     def test_delete_preview_metadata(self, mock_controller):
         """DELETE the preview content endpoint."""
-        response = self.client.delete('/preview/12345/asdf1234==/content')
+        response = self.client.delete('/12345/asdf1234==/content')
         self.assertEqual(response.status_code, status.METHOD_NOT_ALLOWED,
                          'DELETE method is 405 Method Not Allowed')
 
@@ -145,12 +145,12 @@ class TestPreviewContent(APITest):
 
         fake_content = io.BytesIO(b'fakecontent')
         response = self.client.put(
-            '/preview/12345/asdf1234==/content',
+            '/12345/asdf1234==/content',
             data=fake_content,
             headers={'Content-type': 'application/pdf'}
         )
 
-        source_id, checksum, stream, ctype = mock_controller.call_args[0]
+        source_id, checksum, stream, ctype, ovw = mock_controller.call_args[0]
         self.assertEqual(source_id, '12345')
         self.assertEqual(checksum, 'asdf1234==')
         self.assertEqual(stream.read(), b'fakecontent')

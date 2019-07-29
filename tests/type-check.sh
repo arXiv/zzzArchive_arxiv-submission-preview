@@ -4,7 +4,7 @@ set -e
 
 PROJECT=$1
 
-MYPY_STATUS=$( pipenv run mypy -p ${PROJECT} | tee /dev/tty | grep -v "test.*" | wc -l | tr -d '[:space:]' )
+MYPY_STATUS=$( pipenv run mypy -p ${PROJECT} | grep -v "test.*" | tee /dev/tty | wc -l | tr -d '[:space:]' )
 if [ $MYPY_STATUS -ne 0 ]; then MYPY_STATE="failure" && echo "mypy failed"; else MYPY_STATE="success" &&  echo "mypy passed"; fi
 if [ "$TRAVIS_PULL_REQUEST_SHA" = "" ];  then SHA=$TRAVIS_COMMIT; else SHA=$TRAVIS_PULL_REQUEST_SHA; fi
 if [ -z ${GITHUB_TOKEN} ]; then

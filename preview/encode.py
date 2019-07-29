@@ -9,7 +9,8 @@ from . import domain
 class PreviewEncoder(ISO8601JSONEncoder):
     """Extend :class:`.ISO8601JSONEncoder` to encode domain objects."""
 
-    def default(self, obj: Any) -> Union[str, List[Any]]:
+    def default(self, obj: Any) -> Any:
+        """Encode domain objects."""
         if isinstance(obj, domain.Metadata):
             return {
                 'added': obj.added.isoformat(),

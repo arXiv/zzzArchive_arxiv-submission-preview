@@ -27,12 +27,14 @@ Constraints
 
 
 """
+import io
+import binascii
 from datetime import datetime
 from hashlib import md5
 from base64 import b64encode
 from typing import IO, Tuple, Optional, Dict, Any
 
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, Literal
 from pytz import UTC
 from flask import Flask
 import boto3
@@ -59,6 +61,39 @@ class GetResponse(TypedDict):
     LastModified: datetime
     ContentLength: int
     Body: IO[bytes]
+
+
+class StreamMonitor(io.BytesIO):
+    """Wraps a stream to calculate checksum and size as the stream is read."""
+
+    def __init__(self, stream: IO[bytes]) -> None:
+        """Initialize md5 hash and size."""
+        self._stream = stream
+        self._md5 = md5()
+        self.size_bytes = 0
+        super().__init__()
+
+    def seekable(self) -> Literal[False]:
+        """This is a non-seekable stream."""
+        return False
+
+    def readable(self) -> Literal[True]:
+        """But it *is* readable."""
+        return True
+
+    def read(self, size: Optional[int] = -1) -> bytes:
+        """Update the hash and size as the stream is read."""
+        if size is None:
+            size = -1
+        chunk = self._stream.read(size)
+        self._md5.update(chunk)
+        self.size_bytes += len(chunk)
+        return chunk
+
+    @property
+    def checksum(self) -> str:
+        """Get the base64-encoded MD5 hash of the stream content."""
+        return self._md5.hexdigest()
 
 
 class NoSuchBucket(Exception):
@@ -115,7 +150,8 @@ class PreviewStore:
         if exc.response['Error']['Code'] == 'NoSuchBucket':
             logger.error('Caught ClientError: NoSuchBucket')
             raise NoSuchBucket(f'{self._bucket} does not exist') from exc
-        if exc.response['Error']['Code'] == "NoSuchKey":
+        if exc.response['Error']['Code'] == "NoSuchKey" \
+                or exc.response['Error']['Code'] == '404':
             raise DoesNotExist(f'No such object in {self._bucket}') from exc
         logger.error('Unhandled ClientError: %s', exc)
         raise RuntimeError('Unhandled ClientError') from exc
@@ -195,11 +231,6 @@ class PreviewStore:
         client = self._new_client(config=config)
         client.create_bucket(Bucket=self._bucket)
 
-    @staticmethod
-    def hash_content(body: bytes) -> str:
-        """Generate an encoded MD5 hash of a bytes."""
-        return b64encode(md5(body).digest()).decode('utf-8')
-
     @classmethod
     def init_app(cls, app: Flask) -> None:
         """Set defaults for required configuration parameters."""
@@ -255,13 +286,9 @@ class PreviewStore:
             raise DepositFailed('Content is missing')
 
         key = self._key(preview.source_id, preview.checksum)
-        body = preview.content.stream.read()
-        preview_checksum = self.hash_content(body)
+        monitor = StreamMonitor(preview.content.stream)
         try:
-            self.client.put_object(Body=body, Bucket=self._bucket,
-                                   ContentMD5=preview_checksum,
-                                   ContentType='application/pdf',
-                                   Key=key)
+            self.client.upload_fileobj(monitor, self._bucket, key)
         except ClientError as exc:
             try:
                 self._handle_client_error(exc)
@@ -270,9 +297,9 @@ class PreviewStore:
         return Preview(source_id=preview.source_id,
                        checksum=preview.checksum,
                        content=preview.content,
-                       metadata=Metadata(checksum=preview_checksum,
+                       metadata=Metadata(checksum=monitor.checksum,
                                          added=datetime.now(UTC),
-                                         size_bytes=len(body)))
+                                         size_bytes=monitor.size_bytes))
 
     def get_metadata(self, source_id: str, checksum: str) -> Metadata:
         key = self._key(source_id, checksum)
@@ -283,7 +310,7 @@ class PreviewStore:
             )
         except ClientError as e:
             self._handle_client_error(e)
-        return Metadata(checksum=resp['ETag'],
+        return Metadata(checksum=resp['ETag'][1:-1],
                         added=resp['LastModified'],
                         size_bytes=resp['ContentLength'])
 
@@ -296,7 +323,7 @@ class PreviewStore:
             )
         except ClientError as e:
             self._handle_client_error(e)
-        return resp['ETag']
+        return resp['ETag'][1:-1]
 
     def get_preview(self, source_id: str, checksum: str) -> Preview:
         """Get the preview including its content."""
@@ -309,7 +336,7 @@ class PreviewStore:
             self._handle_client_error(e)
         return Preview(source_id=source_id,
                        checksum=checksum,
-                       metadata=Metadata(checksum=resp['ETag'],
+                       metadata=Metadata(checksum=resp['ETag'][1:-1],
                                          added=resp['LastModified'],
                                          size_bytes=resp['ContentLength']),
                        content=Content(stream=resp['Body']))

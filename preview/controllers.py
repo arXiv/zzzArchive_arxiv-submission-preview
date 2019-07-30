@@ -56,7 +56,9 @@ def get_preview_metadata(source_id: str, checksum: str) -> Response:
     except store.DoesNotExist as e:
         raise NotFound('No preview available') from e
 
-    data = {'added': metadata.added, 'checksum': metadata.checksum}
+    data = {'added': metadata.added,
+            'checksum': metadata.checksum,
+            'size_bytes': preview.metadata.size_bytes}
     headers = {'ETag': metadata.checksum}
     return data, HTTPStatus.OK, headers
 
@@ -102,7 +104,7 @@ def get_preview_content(source_id: str, checksum: str,
         raise InternalServerError('Unexpected error loading content')
 
     headers = {'ETag': preview.metadata.checksum,
-               'Content-type': 'application/pdf'}
+               'Content-type': 'application/pdf',}
     return preview.content.stream, HTTPStatus.OK, headers
 
 
@@ -151,6 +153,7 @@ def deposit_preview(source_id: str, checksum: str, stream: IO[bytes],
         raise InternalServerError('An error occurred when storing preview')
 
     response_data = {'checksum': preview.metadata.checksum,
-                     'added': preview.metadata.added}
+                     'added': preview.metadata.added,
+                     'size_bytes': preview.metadata.size_bytes}
     headers = {'ETag': preview.metadata.checksum}
     return response_data, HTTPStatus.CREATED, headers

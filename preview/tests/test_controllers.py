@@ -111,7 +111,8 @@ class TestDepositPreview(TestCase):
         self.assertEqual(headers['ETag'], 'foopdfchex==',
                          'ETag is set to the preview checksum')
         self.assertDictEqual(data, {'checksum': 'foopdfchex==',
-                                    'added': added},
+                                    'added': added,
+                                    'size_bytes': 1234},
                              'Returns metadata about the preview')
 
 
@@ -151,7 +152,8 @@ class TestRetrievePreviewMetadata(TestCase):
         self.assertEqual(headers['ETag'], 'foopdfchex==',
                          'ETag is set to the preview checksum')
         self.assertDictEqual(data, {'checksum': 'foopdfchex==',
-                                    'added': added},
+                                    'added': added,
+                                    'size_bytes': 1234},
                              'Returns metadata about the preview')
 
 class TestRetrievePreviewContent(TestCase):

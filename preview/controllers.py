@@ -58,7 +58,7 @@ def get_preview_metadata(source_id: str, checksum: str) -> Response:
 
     data = {'added': metadata.added,
             'checksum': metadata.checksum,
-            'size_bytes': preview.metadata.size_bytes}
+            'size_bytes': metadata.size_bytes}
     headers = {'ETag': metadata.checksum}
     return data, HTTPStatus.OK, headers
 

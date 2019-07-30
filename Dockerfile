@@ -1,9 +1,11 @@
-FROM arxiv/base:0.15.9
+ARG BASE_VERSION=latest
+
+FROM arxiv/base:${BASE_VERSION}
 
 WORKDIR /opt/arxiv/
-RUN yum install -y which mysql mysql-devel && yum clean all
+
 COPY wsgi.py uwsgi.ini Pipfile Pipfile.lock /opt/arxiv/
-RUN pip install -U pip pipenv uwsgi && pipenv install && rm -rf ~/.cache/pip
+RUN pipenv install && rm -rf ~/.cache/pip
 
 ENV PATH="/opt/arxiv:${PATH}" \
     LC_ALL="en_US.utf8" \

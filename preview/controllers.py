@@ -22,6 +22,28 @@ def service_status(*args: Any, **kwargs: Any) -> Response:
     Handle requests for the service status endpoint.
 
     Returns ``200 OK`` if the service is up and ready to handle requests.
+
+    Parameters
+    ----------
+    args : *args
+        Unused.
+    kwargs : **kwargs
+        Unused.
+
+    Returns
+    -------
+    dict
+        Metadata about the deposit.
+    int
+        HTTP status code.
+    dict
+        Headers to add to the response.
+
+    Raises
+    ------
+    :class:`.ServiceUnavaiable`
+        Raised when one or more upstream services are not available.
+
     """
     st = store.PreviewStore.current_session()
     if not st.is_available():
@@ -48,6 +70,11 @@ def get_preview_metadata(source_id: str, checksum: str) -> Response:
         HTTP status code.
     dict
         Headers to add to the response.
+
+    Raises
+    ------
+    :class:`.NotFound`
+        Raised when a non-existant preview is requested.
 
     """
     st = store.PreviewStore.current_session()
@@ -86,6 +113,13 @@ def get_preview_content(source_id: str, checksum: str,
         HTTP status code.
     dict
         Headers to add to the response.
+
+    Raises
+    ------
+    :class:`.NotFound`
+        Raised when a non-existant preview is requested.
+    :class:`.InternalServerError`
+        Raised when preview metadata or content are not loaded correctly.
 
     """
     st = store.PreviewStore.current_session()
@@ -135,6 +169,17 @@ def deposit_preview(source_id: str, checksum: str, stream: IO[bytes],
         HTTP status code.
     dict
         Headers to add to the response.
+
+    Raises
+    ------
+    :class:`.BadRequest`
+        Raised when the request is incomplete, specifically when the
+        ``Content-type`` header is missing or unsupported.
+    :class:`.InternalServerError`
+        Raised when there is a problem storing the preview.
+    :class:`.Conflict`
+        Raised when content already exists for the preview, and ``overwrite``
+        is ``False``.
 
     """
     if content_type is None or content_type != 'application/pdf':

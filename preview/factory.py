@@ -7,16 +7,23 @@ from werkzeug.exceptions import HTTPException, Forbidden, Unauthorized, \
 from arxiv.base import Base, logging
 from arxiv.base.middleware import wrap, request_logs
 
+from .services import PreviewStore
 from . import routes
+from .encode import PreviewEncoder
 
 
 def create_app() -> Flask:
     """Create a new API application."""
     app = Flask('preview')
+    app.json_encoder = PreviewEncoder
     app.config.from_pyfile('config.py')
     Base(app)
     app.register_blueprint(routes.api)
     register_error_handlers(app)
+
+    PreviewStore.init_app(app)
+    with app.app_context():  # type: ignore
+        PreviewStore.current_session().initialize()
     return app
 
 

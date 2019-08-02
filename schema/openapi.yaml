@@ -1,0 +1,112 @@
+openapi: "3.0.1"
+info:
+  version: "0.0"
+  title: "arXiv Submission Preview"
+  description: Provides previews of arXiv submissions.
+  termsOfService: "https://arxiv.org/help/api/tou"
+  contact:
+    name: "arXiv API Team"
+    email: nextgen@arxiv.org
+  license:
+    name: MIT
+servers:
+  - url: https://api.arxiv.org/submission/preview/
+    description: Submission preview endpoint.
+paths:
+  /status:
+    get:
+      operationId: getServiceStatus
+      description: |
+        Get the current readiness of the submission preview service. Returns
+        ``200 OK`` if the service is available. Returns ``503 Service
+        Unavailable`` otherwise.
+      responses:
+        '200':
+          description: The service is available.
+        '503':
+          description: The service is not available.
+
+  /{source_id}/{checksum}/content:
+    parameters:
+      - name: source_id
+        in: path
+        description: |
+          Identifier for the submission source package. Note that this is
+          NOT the submission ID.
+        required: true
+        schema:
+          type: string
+      - name: checksum
+        in: path
+        description: |
+          Checksum of the submission source package. This is an URL-safe
+          base64-encoded md5 hash of the source package contents.
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getSubmissionPreview
+      description: Retrieve the content of a submission preview.
+      responses:
+        '200':
+          description: Content of the submission preview.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: No such preview.
+
+    put:
+      operationId: depositSubmissionPreview
+      description: |
+        "Deposit the content of a submission preview. Be sure to include the
+         header ``Content-type: application/pdf``."
+      responses:
+        '201':
+          description: Deposit was successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: './resources/preview.json#Preview'
+        '400':
+          description: |
+            "Missing or invalid parameters. This is usually because
+             the ``Content-type`` header was missing in the request."
+        '409':
+          description: Content already exists for this preview.
+
+
+  /{source_id}/{checksum}:
+    parameters:
+      - name: source_id
+        in: path
+        description: |
+          Identifier for the submission source package. Note that this is
+          NOT the submission ID.
+        required: true
+        schema:
+          type: string
+      - name: checksum
+        in: path
+        description: |
+          Checksum of the submission source package. This is an URL-safe
+          base64-encoded md5 hash of the source package contents.
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getSubmissionPreviewMetadata
+      description: Retrieve the metadata of a submission preview.
+      responses:
+        '200':
+          description: Metadata of the submission preview.
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: './resources/preview.json#Preview'
+        '404':
+          description: No such preview.

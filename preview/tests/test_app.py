@@ -77,7 +77,7 @@ class TestDeposit(TestCase):
         self.assertEqual(response.status_code, status.CREATED,
                          'Returns 201 CREATED')
         self.assertEqual(response_data['checksum'],
-                         '7b0ae08001dd093e79335b947f028b10',
+                         'ewrggAHdCT55M1uUfwKLEA==',
                          'Returns S3 checksum of the preview content')
         self.assertEqual(response_data['checksum'], response.headers['ETag'],
                          'Includes ETag header with checksum as well')
@@ -135,7 +135,7 @@ class TestDeposit(TestCase):
         self.assertIsNotNone(response_data, 'Returns valid JSON')
         self.assertEqual(response.status_code, status.OK, 'Returns 200 OK')
         self.assertEqual(response_data['checksum'],
-                         '7b0ae08001dd093e79335b947f028b10',
+                         'ewrggAHdCT55M1uUfwKLEA==',
                          'Returns S3 checksum of the preview content')
         self.assertEqual(response_data['checksum'], response.headers['ETag'],
                          'Includes ETag header with checksum as well')
@@ -185,7 +185,7 @@ class TestDeposit(TestCase):
         self.assertEqual(response.headers['Content-Type'], 'application/pdf')
         self.assertEqual(response.status_code, status.OK, 'Returns 200 OK')
         self.assertEqual(response.headers['ETag'],
-                         '7b0ae08001dd093e79335b947f028b10',
+                         'ewrggAHdCT55M1uUfwKLEA==',
                          'Includes ETag header with checksum as well')
 
     @mock_s3

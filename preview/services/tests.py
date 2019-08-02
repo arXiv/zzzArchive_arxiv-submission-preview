@@ -38,7 +38,7 @@ class TestStorePreview(TestCase):
         self.assertIsNotNone(after.metadata, 'Metadata member is set')
         self.assertEqual(after.metadata.size_bytes, 10, 'Calculates size')
         self.assertEqual(after.metadata.checksum,
-                         '7b0ae08001dd093e79335b947f028b10',
+                         'ewrggAHdCT55M1uUfwKLEA==',
                          'Calculates checksum')
 
         metadata = self.store.get_metadata('1234', 'foochex==')

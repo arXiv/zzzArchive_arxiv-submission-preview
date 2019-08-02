@@ -31,7 +31,7 @@ import io
 import binascii
 from datetime import datetime
 from hashlib import md5
-from base64 import b64encode
+from base64 import urlsafe_b64encode, urlsafe_b64decode
 from typing import IO, Tuple, Optional, Dict, Any
 
 from typing_extensions import TypedDict, Literal
@@ -96,8 +96,9 @@ class StreamMonitor(io.BytesIO):
 
     @property
     def checksum(self) -> str:
-        """Get the base64-encoded MD5 hash of the stream content."""
-        return self._md5.hexdigest()
+        """Get the url-safe base64-encoded MD5 hash of the stream content."""
+        return urlsafe_b64encode(self._md5.digest()).decode('utf-8')
+        # return self._md5.hexdigest()
 
 
 class NoSuchBucket(Exception):
@@ -317,9 +318,10 @@ class PreviewStore:
         return Preview(source_id=preview.source_id,
                        checksum=preview.checksum,
                        content=preview.content,
-                       metadata=Metadata(checksum=monitor.checksum,
-                                         added=datetime.now(UTC),
-                                         size_bytes=monitor.size_bytes))
+                       metadata=Metadata(
+                           checksum=monitor.checksum,
+                           added=datetime.now(UTC),
+                           size_bytes=monitor.size_bytes))
 
     def get_metadata(self, source_id: str, checksum: str) -> Metadata:
         """
@@ -349,7 +351,7 @@ class PreviewStore:
             )
         except ClientError as e:
             self._handle_client_error(e)
-        return Metadata(checksum=resp['ETag'][1:-1],
+        return Metadata(checksum=_hex_to_b64(resp['ETag'][1:-1]),
                         added=resp['LastModified'],
                         size_bytes=resp['ContentLength'])
 
@@ -362,7 +364,7 @@ class PreviewStore:
             )
         except ClientError as e:
             self._handle_client_error(e)
-        return resp['ETag'][1:-1]
+        return _hex_to_b64(resp['ETag'][1:-1])
 
     def get_preview(self, source_id: str, checksum: str) -> Preview:
         """Get the preview including its content."""
@@ -375,8 +377,15 @@ class PreviewStore:
             self._handle_client_error(e)
         return Preview(source_id=source_id,
                        checksum=checksum,
-                       metadata=Metadata(checksum=resp['ETag'][1:-1],
-                                         added=resp['LastModified'],
-                                         size_bytes=resp['ContentLength']),
+                       metadata=Metadata(
+                           checksum=_hex_to_b64(resp['ETag'][1:-1]),
+                           added=resp['LastModified'],
+                           size_bytes=resp['ContentLength']
+                        ),
                        content=Content(stream=resp['Body']))
 
+
+
+def _hex_to_b64(etag: str) -> str:
+    """Convert an hexdigest of an MD5 to a URL-safe base64-encoded digest."""
+    return urlsafe_b64encode(binascii.unhexlify(etag)).decode('utf-8')

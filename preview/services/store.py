@@ -271,7 +271,8 @@ class PreviewStore:
     def _key(self, source_id: str, checksum: str) -> str:
         return f'preview/{source_id}/{checksum}/{source_id}.pdf'
 
-    def deposit(self, preview: Preview, overwrite: bool = False) -> Preview:
+    def deposit(self, preview: Preview, overwrite: bool = False,
+                checksum: Optional[str] = None) -> Preview:
         """
         Deposit the content of a preview.
 
@@ -283,6 +284,10 @@ class PreviewStore:
             If True (default is False), will overwrite an existing key.
             Otherwise, if the key already exists, will raise
             :class:`.PreviewAlreadyExists`.
+        checksum : str or None
+            If provided, the checksum of the transferred content is verified
+            against this checksum. A :class:`.DepositFailed` exception is
+            raised if this check does not pass.
 
         Returns
         -------
@@ -295,6 +300,8 @@ class PreviewStore:
         :class:`.PreviewAlreadyExists`
             Raised if an attempt is made to write a preview, and ``overwrite``
             is False.
+        :class:`.DepositFailed`
+            Raised if the preview content could not be deposited.
 
         """
         if preview.content is None:
@@ -315,6 +322,12 @@ class PreviewStore:
                 self._handle_client_error(exc)
             except RuntimeError as e:
                 raise DepositFailed('Could not deposit preview') from e
+
+        if checksum is not None and monitor.checksum != checksum:
+            self.client.delete_object(Bucket=self._bucket, Key=key)
+            raise DepositFailed('Checksum validation failed. Expected'
+                                f' `{checksum}`, got `{monitor.checksum}`')
+
         return Preview(source_id=preview.source_id,
                        checksum=preview.checksum,
                        content=preview.content,

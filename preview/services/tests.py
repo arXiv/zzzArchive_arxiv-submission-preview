@@ -61,6 +61,36 @@ class TestStorePreview(TestCase):
                          'Loads original content')
 
     @mock_s3
+    def test_deposit_checksum_fails(self):
+        """Deposit a preview but checksum validation fails."""
+        self.store.initialize()
+        stream = io.BytesIO(b'foocontent')
+        preview = Preview(source_id='1234',
+                          checksum='foochex==',
+                          content=Content(stream=stream))
+        with self.assertRaises(store.DepositFailed):
+            self.store.deposit(preview, checksum='somethingelse==')
+
+        with self.assertRaises(store.DoesNotExist):
+            self.store.get_metadata('1234', 'foochex==')
+
+        with self.assertRaises(store.DoesNotExist):
+            self.store.get_preview('1234', 'foochex==')
+
+    @mock_s3
+    def test_deposit_checksum_passes(self):
+        """Deposit a preview and checksum validation passes."""
+        self.store.initialize()
+        stream = io.BytesIO(b'foocontent')
+        preview = Preview(source_id='1234',
+                          checksum='foochex==',
+                          content=Content(stream=stream))
+        try:
+            self.store.deposit(preview, checksum='ewrggAHdCT55M1uUfwKLEA==')
+        except store.DepositFailed as e:
+            self.fail(f'Checksum validation should pass: {e}')
+
+    @mock_s3
     def test_retrieve_nonexistant(self):
         """Deposit a preview and then load it."""
         self.store.initialize()

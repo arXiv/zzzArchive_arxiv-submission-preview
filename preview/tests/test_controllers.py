@@ -89,11 +89,11 @@ class TestDepositPreview(TestCase):
 
     @mock.patch(f'{store.__name__}.PreviewStore.current_session')
     def test_deposit_successful(self, mock_current_session):
-        """The store service returns malformed data."""
+        """The preview is deposited successfully."""
         mock_store = mock.MagicMock()
         added = datetime.now(UTC)
 
-        def mock_deposit(obj, overwrite):
+        def mock_deposit(obj, overwrite, **kwargs):
             """Deposit implementation sets metadata on Preview."""
             return Preview(source_id=obj.source_id,
                            checksum=obj.checksum,
@@ -114,7 +114,6 @@ class TestDepositPreview(TestCase):
                                     'added': added,
                                     'size_bytes': 1234},
                              'Returns metadata about the preview')
-
 
 
 class TestRetrievePreviewMetadata(TestCase):

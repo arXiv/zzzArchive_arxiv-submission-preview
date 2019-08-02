@@ -144,6 +144,7 @@ def get_preview_content(source_id: str, checksum: str,
 
 def deposit_preview(source_id: str, checksum: str, stream: IO[bytes],
                     content_type: Optional[str],
+                    content_checksum: Optional[str]= None,
                     overwrite: bool = False) -> Response:
     """
     Handle a request to deposit the content of a preview.
@@ -188,7 +189,8 @@ def deposit_preview(source_id: str, checksum: str, stream: IO[bytes],
     st = store.PreviewStore.current_session()
     preview = Preview(source_id, checksum, content=Content(stream=stream))
     try:
-        preview = st.deposit(preview, overwrite=overwrite)
+        preview = st.deposit(preview, overwrite=overwrite,
+                             checksum=content_checksum)
     except store.DepositFailed as e:
         raise InternalServerError('An unexpected error occurred') from e
     except store.PreviewAlreadyExists as e:

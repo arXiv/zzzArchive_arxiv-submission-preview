@@ -150,10 +150,49 @@ class TestPreviewContent(APITest):
             headers={'Content-type': 'application/pdf'}
         )
 
-        source_id, checksum, stream, ctype, ovw = mock_controller.call_args[0]
+        args, kwargs = mock_controller.call_args
+        source_id, checksum, stream, ctype = args
+
         self.assertEqual(source_id, '12345')
         self.assertEqual(checksum, 'asdf1234==')
         self.assertEqual(stream.read(), b'fakecontent')
+        self.assertFalse(kwargs['overwrite'])
+        self.assertIsNone(kwargs['content_checksum'])
+
+        self.assertEqual(response.status_code, status.CREATED,
+                         'Returns with status code set by controller')
+        self.assertEqual(response.headers['Content-type'],
+                         'application/json',
+                         'Return indicates JSON content type')
+        data = response.get_json()
+        self.assertIsNotNone(data, 'Returns JSON content')
+        self.assertEqual(response.headers['ETag'], 'foobar1==',
+                         'Returns ETag header given by controller')
+
+    @mock.patch(f'{routes.__name__}.controllers.deposit_preview')
+    def test_put_preview_content_with_validation(self, mock_controller):
+        """PUT the preview content endpoint with checksum validation."""
+        mock_controller.return_value = (
+            {'foo': 'bar'},
+            status.CREATED,
+            {'ETag': 'foobar1=='}
+        )
+
+        fake_content = io.BytesIO(b'fakecontent')
+        response = self.client.put(
+            '/12345/asdf1234==/content',
+            data=fake_content,
+            headers={'Content-type': 'application/pdf', 'ETag': 'footag=='}
+        )
+
+        args, kwargs = mock_controller.call_args
+        source_id, checksum, stream, ctype = args
+
+        self.assertEqual(source_id, '12345')
+        self.assertEqual(checksum, 'asdf1234==')
+        self.assertEqual(stream.read(), b'fakecontent')
+        self.assertFalse(kwargs['overwrite'])
+        self.assertEqual(kwargs['content_checksum'], 'footag==')
 
         self.assertEqual(response.status_code, status.CREATED,
                          'Returns with status code set by controller')

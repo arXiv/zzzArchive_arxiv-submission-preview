@@ -155,6 +155,42 @@ class TestRetrievePreviewMetadata(TestCase):
                                     'size_bytes': 1234},
                              'Returns metadata about the preview')
 
+
+class TestPreviewExists(TestCase):
+    """Tests for :func:`.controllers.check_preview_exists` controller."""
+
+    def setUp(self):
+        """All requests are in the context of a source + checksum."""
+        self.source_id = '12345'
+        self.checksum = 'asdfqwert1=='
+        self.stream = io.BytesIO(b'fakecontent')
+        self.content_type = 'application/pdf'
+
+    @mock.patch(f'{store.__name__}.PreviewStore.current_session')
+    def test_does_not_exist(self, mock_current_session):
+        """The requested preview does not exist."""
+        mock_store = mock.MagicMock()
+        mock_store.get_preview_checksum.side_effect = store.DoesNotExist
+        mock_current_session.return_value = mock_store
+
+        with self.assertRaises(NotFound):
+            controllers.check_preview_exists(self.source_id, self.checksum)
+
+    @mock.patch(f'{store.__name__}.PreviewStore.current_session')
+    def test_exists(self, mock_current_session):
+        """The requested preview does exist."""
+        added = datetime.now(UTC)
+        mock_store = mock.MagicMock()
+        mock_store.get_preview_checksum.return_value = 'foopdfchex=='
+        mock_current_session.return_value = mock_store
+
+        data, code, headers = \
+            controllers.check_preview_exists(self.source_id, self.checksum)
+        self.assertEqual(code, status.OK, 'Returns 200 OK')
+        self.assertEqual(headers['ETag'], 'foopdfchex==',
+                         'ETag is set to the preview checksum')
+
+
 class TestRetrievePreviewContent(TestCase):
     """Tests for :func:`.controllers.get_preview_content` controller."""
 

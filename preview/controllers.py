@@ -51,6 +51,41 @@ def service_status(*args: Any, **kwargs: Any) -> Response:
     return {'iam': 'ok'}, HTTPStatus.OK, {}
 
 
+def check_preview_exists(source_id: str, checksum: str) -> Response:
+    """
+    Handle request to check whether preview exists.
+
+    Parameters
+    ----------
+    source_id : str
+        Unique identifier for the source package.
+    checksum : str
+        State of the source package to which this preview corresponds.
+
+    Returns
+    -------
+    dict
+        Metadata about the deposit.
+    int
+        HTTP status code.
+    dict
+        Headers to add to the response.
+
+    Raises
+    ------
+    :class:`.NotFound`
+        Raised when a non-existant preview is requested.
+
+    """
+    st = store.PreviewStore.current_session()
+    try:
+        preview_checksum = st.get_preview_checksum(source_id, checksum)
+    except store.DoesNotExist as e:
+        raise NotFound('No preview available') from e
+    headers = {'ETag': preview_checksum}
+    return {}, HTTPStatus.OK, headers
+
+
 def get_preview_metadata(source_id: str, checksum: str) -> Response:
     """
     Handle request for preview metadata.

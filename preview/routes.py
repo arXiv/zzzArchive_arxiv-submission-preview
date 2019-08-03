@@ -23,6 +23,14 @@ def service_status() -> Response:
     return response
 
 
+@api.route('/<source_id>/<checksum>', methods=['HEAD'])
+def check_preview_exists(source_id: str, checksum: str) -> Response:
+    """Verify that the preview exists."""
+    data, code, headers = controllers.check_preview_exists(source_id, checksum)
+    response: Response = make_response(jsonify(data), code, headers)
+    return response
+
+
 @api.route('/<source_id>/<checksum>', methods=['GET'])
 def get_preview_metadata(source_id: str, checksum: str) -> Response:
     """Returns a JSON document describing the preview."""

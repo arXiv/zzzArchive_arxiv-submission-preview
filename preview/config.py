@@ -25,3 +25,5 @@ S3_ENDPOINT = environ.get('S3_ENDPOINT', None)
 AWS_REGION = environ.get('AWS_REGION', 'us-east-1')
 AWS_ACCESS_KEY_ID = environ.get('AWS_ACCESS_KEY_ID', 'fookey')
 AWS_SECRET_ACCESS_KEY = environ.get('AWS_SECRET_ACCESS_KEY', 'foosecret')
+
+MAX_PAYLOAD_SIZE_BYTES = 100 * 1_028

@@ -12,6 +12,7 @@ class APITest(TestCase):
     def setUp(self):
         """We have an app."""
         self.app = Flask('test')
+        self.app.config['MAX_PAYLOAD_SIZE_BYTES'] = 10 * 1_028
         self.app.register_blueprint(routes.api)
         self.client = self.app.test_client()
 
@@ -135,6 +136,23 @@ class TestPreviewContent(APITest):
                          'DELETE method is 405 Method Not Allowed')
 
     @mock.patch(f'{routes.__name__}.controllers.deposit_preview')
+    def test_put_preview_content_simple(self, mock_controller):
+        """PUT the preview content endpoint."""
+        mock_controller.return_value = (
+            {'foo': 'bar'},
+            status.CREATED,
+            {'ETag': 'foobar1=='}
+        )
+        response = self.client.put('/12345/asdf1234==/content',
+                                   data=b'fakecontent',
+                                   headers={'Content-type': 'application/pdf'})
+        self.assertEqual(response.status_code, status.CREATED,
+                         'Returns with status code set by controller')
+        self.assertEqual(response.headers['Content-type'],
+                         'application/json',
+                         'Return indicates JSON content type')
+
+    @mock.patch(f'{routes.__name__}.controllers.deposit_preview')
     def test_put_preview_content(self, mock_controller):
         """PUT the preview content endpoint."""
         mock_controller.return_value = (
@@ -144,14 +162,11 @@ class TestPreviewContent(APITest):
         )
 
         fake_content = io.BytesIO(b'fakecontent')
-        response = self.client.put(
-            '/12345/asdf1234==/content',
-            data=fake_content,
-            headers={'Content-type': 'application/pdf'}
-        )
+        response = self.client.put('/12345/asdf1234==/content',
+                                   data=fake_content)
 
         args, kwargs = mock_controller.call_args
-        source_id, checksum, stream, ctype = args
+        source_id, checksum, stream = args
 
         self.assertEqual(source_id, '12345')
         self.assertEqual(checksum, 'asdf1234==')
@@ -182,11 +197,11 @@ class TestPreviewContent(APITest):
         response = self.client.put(
             '/12345/asdf1234==/content',
             data=fake_content,
-            headers={'Content-type': 'application/pdf', 'ETag': 'footag=='}
+            headers={'ETag': 'footag=='}
         )
 
         args, kwargs = mock_controller.call_args
-        source_id, checksum, stream, ctype = args
+        source_id, checksum, stream = args
 
         self.assertEqual(source_id, '12345')
         self.assertEqual(checksum, 'asdf1234==')

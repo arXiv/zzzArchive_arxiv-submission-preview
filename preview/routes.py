@@ -1,9 +1,13 @@
 """Provides the API blueprint for the submission preview service."""
 
-from typing import Dict, Any, IO, Optional
+import io
 from http import HTTPStatus as status
-from flask import Blueprint, Response, request, make_response, send_file
+from typing import Dict, Any, IO, Optional
+
+from flask import Blueprint, Response, request, make_response, send_file, \
+    current_app
 from flask.json import jsonify
+from werkzeug.exceptions import RequestEntityTooLarge, BadRequest
 
 from . import controllers
 
@@ -57,14 +61,25 @@ def get_preview_content(source_id: str, checksum: str) -> Response:
 @api.route('/<source_id>/<checksum>/content', methods=['PUT'])
 def deposit_preview(source_id: str, checksum: str) -> Response:
     """Creates a new preview resource at the specified key."""
-    content_type: Optional[str] = request.headers.get('Content-type')
     content_checksum: Optional[str] = request.headers.get('ETag', None)
     overwrite = bool(request.headers.get('Overwrite', 'false') == 'true')
-    stream: IO[bytes] = request.stream   # type: ignore
+
+    stream: IO[bytes]
+    if request.headers.get('Content-type') is not None:
+        length = int(request.headers.get('Content-length', 0))
+        if length == 0:
+            raise BadRequest('Body empty or content-length not set')
+        max_length = int(current_app.config['MAX_PAYLOAD_SIZE_BYTES'])
+        if length > max_length:
+            raise RequestEntityTooLarge(f'Body exceeds size of {max_length}')
+        stream = io.BytesIO(request.data)
+    else:
+        # DANGER! request.stream will ONLY be available if (a) the content-type
+        # header is not passed and (b) we have not accessed the body via any
+        # other means, e.g. ``.data``, ``.json``, etc.
+        stream = request.stream   # type: ignore
     data, code, headers = controllers.deposit_preview(
-        source_id, checksum,
-        stream,
-        content_type,
+        source_id, checksum, stream,
         overwrite=overwrite,
         content_checksum=content_checksum
     )

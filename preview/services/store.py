@@ -27,20 +27,21 @@ Constraints
 
 
 """
-import io
 import binascii
+import io
+from base64 import urlsafe_b64encode, urlsafe_b64decode
 from datetime import datetime
 from hashlib import md5
-from base64 import urlsafe_b64encode, urlsafe_b64decode
 from typing import IO, Tuple, Optional, Dict, Any
 
-from typing_extensions import TypedDict, Literal
-from pytz import UTC
-from flask import Flask
 import boto3
 import botocore
+from boto3.s3.transfer import TransferConfig
 from botocore.config import Config
 from botocore.exceptions import ClientError
+from flask import Flask
+from pytz import UTC
+from typing_extensions import TypedDict, Literal
 
 from arxiv.base import logging
 from arxiv.base.globals import get_application_global, get_application_config
@@ -90,8 +91,9 @@ class StreamMonitor(io.BytesIO):
         if size is None:
             size = -1
         chunk = self._stream.read(size)
-        self._md5.update(chunk)
-        self.size_bytes += len(chunk)
+        if len(chunk) != 0:
+            self._md5.update(chunk)
+            self.size_bytes += len(chunk)
         return chunk
 
     @property
@@ -305,28 +307,35 @@ class PreviewStore:
 
         """
         if preview.content is None:
+            logger.error('Content is missing')
             raise DepositFailed('Content is missing')
 
         if not overwrite:
             try:
                 self.get_metadata(preview.source_id, preview.checksum)
+                logger.error('Preview already exists: %s @ %s',
+                             preview.source_id, preview.checksum)
                 raise PreviewAlreadyExists('Preview content already exists')
             except DoesNotExist:
                 pass
         key = self._key(preview.source_id, preview.checksum)
         monitor = StreamMonitor(preview.content.stream)
         try:
-            self.client.upload_fileobj(monitor, self._bucket, key)
+            self.client.upload_fileobj(monitor, self._bucket, key,
+                                       Config=TransferConfig(io_chunksize=4096))
         except ClientError as exc:
             try:
                 self._handle_client_error(exc)
             except RuntimeError as e:
+                logger.error('An unexpected error occurred: %s', e)
                 raise DepositFailed('Could not deposit preview') from e
 
         if checksum is not None and monitor.checksum != checksum:
+            msg = ('Checksum validation failed. Expected'
+                   f' `{checksum}`, got `{monitor.checksum}`')
+            logger.error(msg)
             self.client.delete_object(Bucket=self._bucket, Key=key)
-            raise DepositFailed('Checksum validation failed. Expected'
-                                f' `{checksum}`, got `{monitor.checksum}`')
+            raise DepositFailed(msg)
 
         return Preview(source_id=preview.source_id,
                        checksum=preview.checksum,

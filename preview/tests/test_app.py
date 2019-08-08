@@ -2,11 +2,13 @@
 
 import io
 import json
-from unittest import TestCase, mock
+from base64 import urlsafe_b64encode, urlsafe_b64decode
+from hashlib import md5
 from http import HTTPStatus as status
+from unittest import TestCase, mock
 
-from moto import mock_s3
 import jsonschema
+from moto import mock_s3
 
 from ..factory import create_app
 from ..services import PreviewStore, store
@@ -34,7 +36,6 @@ class TestServiceStatus(TestCase):
         self.assertEqual(resp.status_code, status.SERVICE_UNAVAILABLE)
 
 
-
 class TestDeposit(TestCase):
     """Test depositing and retrieving a preview."""
 
@@ -44,40 +45,21 @@ class TestDeposit(TestCase):
             self.schema = json.load(f)
 
     @mock_s3
-    def test_deposit_without_content_type(self):
-        """Deposit a preview without hiccups."""
-        app = create_app()
-        client = app.test_client()
-        content = io.BytesIO(b'foocontent')
-        response = client.put('/1234/foohash1==/content', data=content)
-        self.assertEqual(response.status_code, status.BAD_REQUEST,
-                         'Returns 400 Bad Request')
-
-    @mock_s3
-    def test_deposit_with_unsupported_content_type(self):
-        """Deposit a preview without hiccups."""
-        app = create_app()
-        client = app.test_client()
-        content = io.BytesIO(b'foocontent')
-        response = client.put('/1234/foohash1==/content', data=content,
-                              headers={'Content-type': 'text/plain'})
-        self.assertEqual(response.status_code, status.BAD_REQUEST,
-                         'Returns 400 Bad Request')
-
-    @mock_s3
     def test_deposit_ok(self):
         """Deposit a preview without hiccups."""
         app = create_app()
         client = app.test_client()
-        content = io.BytesIO(b'foocontent')
-        response = client.put('/1234/foohash1==/content', data=content,
-                              headers={'Content-type': 'application/pdf'})
+        raw_content = b'foocontent' * 4096
+        m = md5()
+        m.update(raw_content)
+        checksum = urlsafe_b64encode(m.digest()).decode('utf-8')
+        content = io.BytesIO(raw_content)
+        response = client.put('/1234/foohash1==/content', data=content)
         response_data = response.get_json()
         self.assertIsNotNone(response_data, 'Returns valid JSON')
         self.assertEqual(response.status_code, status.CREATED,
                          'Returns 201 CREATED')
-        self.assertEqual(response_data['checksum'],
-                         'ewrggAHdCT55M1uUfwKLEA==',
+        self.assertEqual(response_data['checksum'], checksum,
                          'Returns S3 checksum of the preview content')
         self.assertEqual(response_data['checksum'], response.headers['ETag'],
                          'Includes ETag header with checksum as well')
@@ -93,11 +75,9 @@ class TestDeposit(TestCase):
         app = create_app()
         client = app.test_client()
         content = io.BytesIO(b'foocontent')
-        client.put('/1234/foohash1==/content', data=content,
-                              headers={'Content-type': 'application/pdf'})
+        client.put('/1234/foohash1==/content', data=content)
         new_content = io.BytesIO(b'barcontent')
-        response = client.put('/1234/foohash1==/content', data=new_content,
-                              headers={'Content-type': 'application/pdf'})
+        response = client.put('/1234/foohash1==/content', data=new_content)
         self.assertEqual(response.status_code, status.CONFLICT,
                          'Returns 409 Conflict')
 
@@ -107,12 +87,10 @@ class TestDeposit(TestCase):
         app = create_app()
         client = app.test_client()
         content = io.BytesIO(b'foocontent')
-        client.put('/1234/foohash1==/content', data=content,
-                              headers={'Content-type': 'application/pdf'})
+        client.put('/1234/foohash1==/content', data=content)
         new_content = io.BytesIO(b'barcontent')
         response = client.put('/1234/foohash1==/content', data=new_content,
-                              headers={'Content-type': 'application/pdf',
-                                       'Overwrite': 'true'})
+                              headers={'Overwrite': 'true'})
         self.assertEqual(response.status_code, status.CREATED,
                          'Returns 201 Created')
         response_data = response.get_json()
@@ -127,8 +105,7 @@ class TestDeposit(TestCase):
         app = create_app()
         client = app.test_client()
         content = io.BytesIO(b'foocontent')
-        client.put('/1234/foohash1==/content', data=content,
-                   headers={'Content-type': 'application/pdf'})
+        client.put('/1234/foohash1==/content', data=content)
         response = client.get('/1234/foohash1==')
         response_data = response.get_json()
 
@@ -177,12 +154,10 @@ class TestDeposit(TestCase):
         app = create_app()
         client = app.test_client()
         content = io.BytesIO(b'foocontent')
-        client.put('/1234/foohash1==/content', data=content,
-                   headers={'Content-type': 'application/pdf'})
+        client.put('/1234/foohash1==/content', data=content)
         response = client.get('/1234/foohash1==/content')
 
         self.assertEqual(response.data, b'foocontent')
-        self.assertEqual(response.headers['Content-Type'], 'application/pdf')
         self.assertEqual(response.status_code, status.OK, 'Returns 200 OK')
         self.assertEqual(response.headers['ETag'],
                          'ewrggAHdCT55M1uUfwKLEA==',
@@ -194,8 +169,7 @@ class TestDeposit(TestCase):
         app = create_app()
         client = app.test_client()
         content = io.BytesIO(b'foocontent')
-        resp = client.put('/1234/foohash1==/content', data=content,
-                          headers={'Content-type': 'application/pdf'})
+        resp = client.put('/1234/foohash1==/content', data=content)
         headers = {'If-None-Match': resp.headers['ETag']}
         response = client.get('/1234/foohash1==/content', headers=headers)
 
@@ -208,8 +182,7 @@ class TestDeposit(TestCase):
         app = create_app()
         client = app.test_client()
         content = io.BytesIO(b'foocontent')
-        resp = client.put('/1234/foohash1==/content', data=content,
-                          headers={'Content-type': 'application/pdf'})
+        resp = client.put('/1234/foohash1==/content', data=content)
         headers = {'If-None-Match': resp.headers['ETag'] + 'foo'}
         response = client.get('/1234/foohash1==/content', headers=headers)
 

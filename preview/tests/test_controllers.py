@@ -45,13 +45,6 @@ class TestDepositPreview(TestCase):
         self.source_id = '12345'
         self.checksum = 'asdfqwert1=='
         self.stream = io.BytesIO(b'fakecontent')
-        self.content_type = 'application/pdf'
-
-    def test_no_content_type(self):
-        """No content type is passed in the request."""
-        with self.assertRaises(BadRequest):
-            controllers.deposit_preview(self.source_id, self.checksum,
-                                        self.stream, None)
 
     @mock.patch(f'{store.__name__}.PreviewStore.current_session')
     def test_deposit_fails(self, mock_current_session):
@@ -62,7 +55,7 @@ class TestDepositPreview(TestCase):
 
         with self.assertRaises(InternalServerError):
             controllers.deposit_preview(self.source_id, self.checksum,
-                                        self.stream, self.content_type)
+                                        self.stream)
 
     @mock.patch(f'{store.__name__}.PreviewStore.current_session')
     def test_already_exists(self, mock_current_session):
@@ -73,7 +66,7 @@ class TestDepositPreview(TestCase):
 
         with self.assertRaises(Conflict):   # 409 Conflict
             controllers.deposit_preview(self.source_id, self.checksum,
-                                        self.stream, self.content_type)
+                                        self.stream)
 
     @mock.patch(f'{store.__name__}.PreviewStore.current_session')
     def test_deposit_return_malformed(self, mock_current_session):
@@ -85,7 +78,7 @@ class TestDepositPreview(TestCase):
 
         with self.assertRaises(InternalServerError):
             controllers.deposit_preview(self.source_id, self.checksum,
-                                        self.stream, self.content_type)
+                                        self.stream)
 
     @mock.patch(f'{store.__name__}.PreviewStore.current_session')
     def test_deposit_successful(self, mock_current_session):
@@ -106,7 +99,7 @@ class TestDepositPreview(TestCase):
 
         data, code, headers = \
             controllers.deposit_preview(self.source_id, self.checksum,
-                                        self.stream, self.content_type)
+                                        self.stream)
         self.assertEqual(code, status.CREATED, 'Returns 201 Created')
         self.assertEqual(headers['ETag'], 'foopdfchex==',
                          'ETag is set to the preview checksum')
@@ -124,7 +117,6 @@ class TestRetrievePreviewMetadata(TestCase):
         self.source_id = '12345'
         self.checksum = 'asdfqwert1=='
         self.stream = io.BytesIO(b'fakecontent')
-        self.content_type = 'application/pdf'
 
     @mock.patch(f'{store.__name__}.PreviewStore.current_session')
     def test_does_not_exist(self, mock_current_session):
@@ -164,7 +156,6 @@ class TestPreviewExists(TestCase):
         self.source_id = '12345'
         self.checksum = 'asdfqwert1=='
         self.stream = io.BytesIO(b'fakecontent')
-        self.content_type = 'application/pdf'
 
     @mock.patch(f'{store.__name__}.PreviewStore.current_session')
     def test_does_not_exist(self, mock_current_session):
@@ -199,7 +190,6 @@ class TestRetrievePreviewContent(TestCase):
         self.source_id = '12345'
         self.checksum = 'asdfqwert1=='
         self.stream = io.BytesIO(b'fakecontent')
-        self.content_type = 'application/pdf'
 
     @mock.patch(f'{store.__name__}.PreviewStore.current_session')
     def test_does_not_exist(self, mock_current_session):

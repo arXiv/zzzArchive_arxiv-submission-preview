@@ -161,6 +161,7 @@ def get_preview_content(source_id: str, checksum: str,
         Raised when preview metadata or content are not loaded correctly.
 
     """
+    headers: Dict[str, Any]
     st = store.PreviewStore.current_session()
     try:
         if none_match is not None:

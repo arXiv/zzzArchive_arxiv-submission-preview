@@ -9,6 +9,8 @@ from flask import Blueprint, Response, request, make_response, send_file, \
 from flask.json import jsonify
 from werkzeug.exceptions import RequestEntityTooLarge, BadRequest
 
+from arxiv.users import auth  # pylint: disable=no-name-in-module
+
 from . import controllers
 
 
@@ -28,6 +30,7 @@ def service_status() -> Response:
 
 
 @api.route('/<source_id>/<checksum>', methods=['HEAD'])
+@auth.decorators.scoped(auth.scopes.READ_PREVIEW)
 def check_preview_exists(source_id: str, checksum: str) -> Response:
     """Verify that the preview exists."""
     data, code, headers = controllers.check_preview_exists(source_id, checksum)
@@ -36,6 +39,7 @@ def check_preview_exists(source_id: str, checksum: str) -> Response:
 
 
 @api.route('/<source_id>/<checksum>', methods=['GET'])
+@auth.decorators.scoped(auth.scopes.READ_PREVIEW)
 def get_preview_metadata(source_id: str, checksum: str) -> Response:
     """Returns a JSON document describing the preview."""
     data, code, headers = controllers.get_preview_metadata(source_id, checksum)
@@ -44,6 +48,7 @@ def get_preview_metadata(source_id: str, checksum: str) -> Response:
 
 
 @api.route('/<source_id>/<checksum>/content', methods=['GET'])
+@auth.decorators.scoped(auth.scopes.READ_PREVIEW)
 def get_preview_content(source_id: str, checksum: str) -> Response:
     """Returns the preview content (e.g. as ``application/pdf``)."""
     none_match = request.headers.get('If-None-Match')
@@ -59,6 +64,7 @@ def get_preview_content(source_id: str, checksum: str) -> Response:
 
 
 @api.route('/<source_id>/<checksum>/content', methods=['PUT'])
+@auth.decorators.scoped(auth.scopes.CREATE_PREVIEW)
 def deposit_preview(source_id: str, checksum: str) -> Response:
     """Creates a new preview resource at the specified key."""
     content_checksum: Optional[str] = request.headers.get('ETag', None)

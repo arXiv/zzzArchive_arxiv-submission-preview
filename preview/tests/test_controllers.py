@@ -36,7 +36,6 @@ class TestStatusEndpoint(TestCase):
         self.assertEqual(code, status.OK)
 
 
-
 class TestDepositPreview(TestCase):
     """Tests for :func:`.controllers.deposit_preview` controller."""
 

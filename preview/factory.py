@@ -2,7 +2,8 @@
 
 from flask import Flask, Response, jsonify
 from werkzeug.exceptions import HTTPException, Forbidden, Unauthorized, \
-    BadRequest, MethodNotAllowed, InternalServerError, NotFound
+    BadRequest, MethodNotAllowed, InternalServerError, NotFound, \
+    ServiceUnavailable
 
 from arxiv.base import Base, logging
 from arxiv.base.middleware import wrap, request_logs
@@ -22,8 +23,9 @@ def create_app() -> Flask:
     register_error_handlers(app)
 
     PreviewStore.init_app(app)
-    with app.app_context():  # type: ignore
-        PreviewStore.current_session().initialize()
+    if app.config['WAIT_FOR_SERVICES']:
+        with app.app_context():  # type: ignore
+            PreviewStore.current_session().initialize()
     return app
 
 
@@ -33,6 +35,7 @@ def register_error_handlers(app: Flask) -> None:
     app.errorhandler(Unauthorized)(jsonify_exception)
     app.errorhandler(BadRequest)(jsonify_exception)
     app.errorhandler(InternalServerError)(jsonify_exception)
+    app.errorhandler(ServiceUnavailable)(jsonify_exception)
     app.errorhandler(NotFound)(jsonify_exception)
     app.errorhandler(MethodNotAllowed)(jsonify_exception)
 

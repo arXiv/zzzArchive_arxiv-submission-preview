@@ -46,7 +46,7 @@ def service_status(*args: Any, **kwargs: Any) -> Response:
 
     """
     st = store.PreviewStore.current_session()
-    if not st.is_available():
+    if not st.is_available(read_timeout=0.5, connect_timeout=0.5, retries=1):
         logger.error('Could not connect to store')
         raise ServiceUnavailable('Cannot connect to store')
     return {'iam': 'ok'}, HTTPStatus.OK, {}

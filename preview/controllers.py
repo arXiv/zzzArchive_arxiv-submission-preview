@@ -14,7 +14,7 @@ from .domain import Preview, Metadata, Content
 logger = logging.getLogger(__name__)
 
 ResponseData = Optional[Union[Dict[str, Any], IO[bytes]]]
-Response = Tuple[ResponseData, HTTPStatus, Dict[str, str]]
+Response = Tuple[ResponseData, HTTPStatus, Dict[str, Any]]
 
 
 def service_status(*args: Any, **kwargs: Any) -> Response:

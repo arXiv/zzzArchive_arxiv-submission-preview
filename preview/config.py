@@ -28,4 +28,4 @@ AWS_SECRET_ACCESS_KEY = environ.get('AWS_SECRET_ACCESS_KEY', 'foosecret')
 
 MAX_PAYLOAD_SIZE_BYTES = 100 * 1_028
 
-WAIT_FOR_SERVICES = bool(int(environ.get('WAIT_FOR_SERVICES', '0')))
+WAIT_FOR_SERVICES = bool(int(environ.get('WAIT_FOR_SERVICES', '1')))

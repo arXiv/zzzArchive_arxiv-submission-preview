@@ -10,8 +10,14 @@ from unittest import TestCase, mock
 import jsonschema
 from moto import mock_s3
 
+from arxiv.users import auth
+from arxiv.users.helpers import generate_token
+
 from ..factory import create_app
 from ..services import PreviewStore, store
+
+auth.scopes.READ_PREVIEW = auth.domain.Scope('preview', 'read')
+auth.scopes.CREATE_PREVIEW = auth.domain.Scope('preview', 'create')
 
 
 class TestServiceStatus(TestCase):
@@ -48,13 +54,20 @@ class TestDeposit(TestCase):
     def test_deposit_ok(self):
         """Deposit a preview without hiccups."""
         app = create_app()
+        app.config['JWT_SECRET'] = 'foosecret'
+        with app.app_context():
+            token = generate_token('123', 'foo@user.com', 'foouser',
+                                   scope=[scopes.READ_PREVIEW,
+                                          scopes.CREATE_PREVIEW])
+
         client = app.test_client()
         raw_content = b'foocontent' * 4096
         m = md5()
         m.update(raw_content)
         checksum = urlsafe_b64encode(m.digest()).decode('utf-8')
         content = io.BytesIO(raw_content)
-        response = client.put('/1234/foohash1==/content', data=content)
+        response = client.put('/1234/foohash1==/content', data=content,
+                              headers={'Authorization': token})
         response_data = response.get_json()
         self.assertIsNotNone(response_data, 'Returns valid JSON')
         self.assertEqual(response.status_code, status.CREATED,

@@ -12,6 +12,8 @@ from werkzeug.exceptions import RequestEntityTooLarge, BadRequest
 from arxiv.users import auth  # pylint: disable=no-name-in-module
 
 from . import controllers
+auth.scopes.READ_PREVIEW = auth.domain.Scope('preview', 'read')
+auth.scopes.CREATE_PREVIEW = auth.domain.Scope('preview', 'create')
 
 
 api = Blueprint('api', __name__, url_prefix='')

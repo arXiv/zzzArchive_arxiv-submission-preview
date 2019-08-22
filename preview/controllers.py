@@ -14,7 +14,7 @@ from .domain import Preview, Metadata, Content
 logger = logging.getLogger(__name__)
 
 ResponseData = Optional[Union[Dict[str, Any], IO[bytes]]]
-Response = Tuple[ResponseData, HTTPStatus, Dict[str, str]]
+Response = Tuple[ResponseData, HTTPStatus, Dict[str, Any]]
 
 
 def service_status(*args: Any, **kwargs: Any) -> Response:
@@ -46,7 +46,7 @@ def service_status(*args: Any, **kwargs: Any) -> Response:
 
     """
     st = store.PreviewStore.current_session()
-    if not st.is_available():
+    if not st.is_available(read_timeout=0.5, connect_timeout=0.5, retries=1):
         logger.error('Could not connect to store')
         raise ServiceUnavailable('Cannot connect to store')
     return {'iam': 'ok'}, HTTPStatus.OK, {}
@@ -161,6 +161,7 @@ def get_preview_content(source_id: str, checksum: str,
         Raised when preview metadata or content are not loaded correctly.
 
     """
+    headers: Dict[str, Any]
     st = store.PreviewStore.current_session()
     try:
         if none_match is not None:

@@ -32,7 +32,7 @@ import io
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 from datetime import datetime
 from hashlib import md5
-from typing import IO, Tuple, Optional, Dict, Any
+from typing import IO, Tuple, Optional, Dict, Any, Union
 
 import boto3
 import botocore
@@ -49,6 +49,8 @@ from arxiv.base.globals import get_application_global, get_application_config
 from ..domain import Content, Preview, Metadata
 
 logger = logging.getLogger(__name__)
+
+Num = Union[int, float]
 
 
 class HeadResponse(TypedDict):
@@ -169,8 +171,8 @@ class PreviewStore:
                      self._verify, self._aws_access_key_id,
                      self._aws_secret_access_key))
 
-    def is_available(self, retries: int = 0, read_timeout: int = 5,
-                     connect_timeout: int = 5) -> bool:
+    def is_available(self, retries: int = 0, read_timeout: Num = 5,
+                     connect_timeout: Num = 5) -> bool:
         """Check whether we can write to the S3 bucket."""
         try:
             self._test_put(retries=retries, read_timeout=read_timeout,

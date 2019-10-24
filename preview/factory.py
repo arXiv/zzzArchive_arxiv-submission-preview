@@ -5,8 +5,10 @@ from werkzeug.exceptions import HTTPException, Forbidden, Unauthorized, \
     BadRequest, MethodNotAllowed, InternalServerError, NotFound, \
     ServiceUnavailable
 
+from arxiv import vault
 from arxiv.base import Base, logging
 from arxiv.base.middleware import wrap, request_logs
+from arxiv.users import auth
 
 from .services import PreviewStore
 from . import routes
@@ -18,10 +20,26 @@ def create_app() -> Flask:
     app = Flask('preview')
     app.json_encoder = PreviewEncoder
     app.config.from_pyfile('config.py')
+
     Base(app)
+    auth.Auth(app)
+
+    # Set up the API.
     app.register_blueprint(routes.api)
     register_error_handlers(app)
 
+    # Add WSGI middlewares.
+    middleware = [request_logs.ClassicLogsMiddleware,
+                  auth.middleware.AuthMiddleware]
+    if app.config['VAULT_ENABLED']:
+        middleware.insert(0, vault.middleware.VaultMiddleware)
+    wrap(app, middleware)
+
+    # Make sure that we have all of the secrets that we need to run.
+    if app.config['VAULT_ENABLED']:
+        app.middlewares['VaultMiddleware'].update_secrets({})
+
+    # Initialize upstream services.
     PreviewStore.init_app(app)
     if app.config['WAIT_FOR_SERVICES']:
         with app.app_context():  # type: ignore

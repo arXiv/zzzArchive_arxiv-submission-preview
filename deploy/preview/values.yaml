@@ -1,0 +1,25 @@
+namespace: development
+name: submission-preview
+
+loglevel: 40
+
+labels:
+  subsystem: submission
+  service_group: backend
+
+scaling:
+  replicas: 1
+
+image:
+  name: arxiv/submission-preview
+  tag: changeme
+
+vault:
+  enabled: 0
+  host: changeme
+  port: 8200
+  role: submission-preview
+  credential: submission-preview
+
+config:
+  wait_for_services: 0

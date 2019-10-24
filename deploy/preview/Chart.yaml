@@ -1,0 +1,7 @@
+name: submission-preview
+version: 0.1.1
+appVersion: 0.1.1
+description: Submission preview service.
+sources:
+  - https://github.com/arxiv/arxiv-submission-preview
+engine: gotpl

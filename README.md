@@ -13,8 +13,8 @@ Clearinghouse for PDFs used during the submission process.
 2. The API must support the following semantics:
 
 - GET ``preview/<source id>/<hash>`` - Returns a JSON document describing the preview (creation time, creator, format, etc).
-- GET ``preview/<source id>/<hash>/content`` - Returns the preview content (e.g. as ``application/pdf``).
-- PUT ``preview/<source id>/<hash>`` - Creates a new preview resource at the specified key. 
+- GET ``preview/<source id>/<hash>/content`` - Returns the content (e.g. as ``application/pdf``).
+- PUT ``preview/<source id>/<hash>/content`` - Creates a new preview resource at the specified key. 
 
   - The body of the request should be the preview content, and headers should identify content type. 
   - Metadata for the resource are automatically created based on the authn context and resource content.

@@ -21,6 +21,7 @@ arxiv-vault = "==0.1.1rc15"
 flask = "*"
 pytz = "*"
 boto3 = "*"
+ecdsa = "==0.15"
 
 [requires]
 python_version = "3.6"

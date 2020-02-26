@@ -1,15 +1,18 @@
 """Provides request controllers for the submission preview service."""
 
-from typing import Tuple, Any, Dict, List, IO, Union, Optional
+from typing import Tuple, Any, Dict, IO, Union, Optional
 from http import HTTPStatus
 
-from werkzeug.datastructures import MultiDict
-from werkzeug.exceptions import InternalServerError, BadRequest, Conflict, \
-    NotFound, ServiceUnavailable
+from werkzeug.exceptions import (
+    InternalServerError,
+    Conflict,
+    NotFound,
+    ServiceUnavailable,
+)
 
 from arxiv.base import logging
 from .services import store
-from .domain import Preview, Metadata, Content
+from .domain import Preview, Content
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +50,9 @@ def service_status(*args: Any, **kwargs: Any) -> Response:
     """
     st = store.PreviewStore.current_session()
     if not st.is_available(read_timeout=0.5, connect_timeout=0.5, retries=1):
-        logger.error('Could not connect to store')
-        raise ServiceUnavailable('Cannot connect to store')
-    return {'iam': 'ok'}, HTTPStatus.OK, {}
+        logger.error("Could not connect to store")
+        raise ServiceUnavailable("Cannot connect to store")
+    return {"iam": "ok"}, HTTPStatus.OK, {}
 
 
 def check_preview_exists(source_id: str, checksum: str) -> Response:
@@ -82,9 +85,9 @@ def check_preview_exists(source_id: str, checksum: str) -> Response:
     try:
         preview_checksum = st.get_preview_checksum(source_id, checksum)
     except store.DoesNotExist as e:
-        raise NotFound('No preview available') from e
-    headers = {'ETag': preview_checksum}
-    logger.debug('check_preview_exists: %s', headers)
+        raise NotFound("No preview available") from e
+    headers = {"ETag": preview_checksum}
+    logger.debug("check_preview_exists: %s", headers)
     return {}, HTTPStatus.OK, headers
 
 
@@ -118,19 +121,22 @@ def get_preview_metadata(source_id: str, checksum: str) -> Response:
     try:
         metadata = st.get_metadata(source_id, checksum)
     except store.DoesNotExist as e:
-        raise NotFound('No preview available') from e
+        raise NotFound("No preview available") from e
 
-    data = {'added': metadata.added,
-            'checksum': metadata.checksum,
-            'size_bytes': metadata.size_bytes}
-    headers = {'ETag': metadata.checksum}
-    logger.debug('get_preview_metadata: data: %s', data)
-    logger.debug('get_preview_metadata: headers: %s', headers)
+    data = {
+        "added": metadata.added,
+        "checksum": metadata.checksum,
+        "size_bytes": metadata.size_bytes,
+    }
+    headers = {"ETag": metadata.checksum}
+    logger.debug("get_preview_metadata: data: %s", data)
+    logger.debug("get_preview_metadata: headers: %s", headers)
     return data, HTTPStatus.OK, headers
 
 
-def get_preview_content(source_id: str, checksum: str,
-                        none_match: Optional[str] = None) -> Response:
+def get_preview_content(
+    source_id: str, checksum: str, none_match: Optional[str] = None
+) -> Response:
     """
     Handle request for preview content.
 
@@ -167,27 +173,33 @@ def get_preview_content(source_id: str, checksum: str,
         if none_match is not None:
             preview_checksum = st.get_preview_checksum(source_id, checksum)
             if none_match == preview_checksum:
-                headers = {'ETag': preview_checksum}
+                headers = {"ETag": preview_checksum}
                 return None, HTTPStatus.NOT_MODIFIED, headers
 
         preview = st.get_preview(source_id, checksum)
     except store.DoesNotExist as e:
-        raise NotFound('No preview available') from e
+        raise NotFound("No preview available") from e
 
     if preview.metadata is None or preview.content is None:
-        logger.error('Unexpected error loading content')
-        raise InternalServerError('Unexpected error loading content')
+        logger.error("Unexpected error loading content")
+        raise InternalServerError("Unexpected error loading content")
 
-    headers = {'ETag': preview.metadata.checksum,
-               'Content-type': 'application/pdf',
-               'Content-Length': preview.metadata.size_bytes}
-    logger.debug('get_preview_content: headers: %s', headers)
+    headers = {
+        "ETag": preview.metadata.checksum,
+        "Content-type": "application/pdf",
+        "Content-Length": preview.metadata.size_bytes,
+    }
+    logger.debug("get_preview_content: headers: %s", headers)
     return preview.content.stream, HTTPStatus.OK, headers
 
 
-def deposit_preview(source_id: str, checksum: str, stream: IO[bytes],
-                    content_checksum: Optional[str]= None,
-                    overwrite: bool = False) -> Response:
+def deposit_preview(
+    source_id: str,
+    checksum: str,
+    stream: IO[bytes],
+    content_checksum: Optional[str] = None,
+    overwrite: bool = False,
+) -> Response:
     """
     Handle a request to deposit the content of a preview.
 
@@ -225,21 +237,24 @@ def deposit_preview(source_id: str, checksum: str, stream: IO[bytes],
     st = store.PreviewStore.current_session()
     preview = Preview(source_id, checksum, content=Content(stream=stream))
     try:
-        preview = st.deposit(preview, overwrite=overwrite,
-                             checksum=content_checksum)
+        preview = st.deposit(
+            preview, overwrite=overwrite, checksum=content_checksum
+        )
     except store.DepositFailed as e:
-        logger.error('An unexpected error occurred: %s', e)
-        raise InternalServerError('An unexpected error occurred') from e
+        logger.error("An unexpected error occurred: %s", e)
+        raise InternalServerError("An unexpected error occurred") from e
     except store.PreviewAlreadyExists as e:
-        raise Conflict('Preview resource already exists') from e
+        raise Conflict("Preview resource already exists") from e
     if preview.metadata is None:
-        logger.error('Preview metadata not set')
-        raise InternalServerError('An error occurred when storing preview')
+        logger.error("Preview metadata not set")
+        raise InternalServerError("An error occurred when storing preview")
 
-    response_data = {'checksum': preview.metadata.checksum,
-                     'added': preview.metadata.added,
-                     'size_bytes': preview.metadata.size_bytes}
-    headers = {'ETag': preview.metadata.checksum}
-    logger.debug('deposit_preview: data: %s', response_data)
-    logger.debug('deposit_preview: headers: %s', headers)
+    response_data = {
+        "checksum": preview.metadata.checksum,
+        "added": preview.metadata.added,
+        "size_bytes": preview.metadata.size_bytes,
+    }
+    headers = {"ETag": preview.metadata.checksum}
+    logger.debug("deposit_preview: data: %s", response_data)
+    logger.debug("deposit_preview: headers: %s", headers)
     return response_data, HTTPStatus.CREATED, headers

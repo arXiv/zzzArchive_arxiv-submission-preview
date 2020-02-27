@@ -2,7 +2,7 @@
 
 from os import environ
 
-APP_VERSION = "0.0"
+APP_VERSION = "0.1rc1"
 
 NAMESPACE = environ.get('NAMESPACE')
 """Namespace in which this service is deployed; to qualify keys for secrets."""

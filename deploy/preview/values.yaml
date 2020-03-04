@@ -14,6 +14,10 @@ image:
   name: arxiv/submission-preview
   tag: changeme
 
+s3:
+  bucket: preview-submission
+  region: us-east-1
+
 vault:
   enabled: 0
   host: changeme

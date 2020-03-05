@@ -38,8 +38,9 @@ services:
       S3_ENDPOINT: "https://submission-preview-test-localstack:4572"
       S3_VERIFY: 0
       LOGLEVEL: 40
+      JWT_SECRET: "foosecret"
     ports:
-      - "9001:8000"
+      - "8000:8000"
     depends_on:
       - submission-preview-test-localstack
     healthcheck:

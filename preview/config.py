@@ -19,7 +19,7 @@ JWT_SECRET = environ.get('JWT_SECRET', 'foosecret')
 
 NS_AFFIX = '' if NAMESPACE == 'production' else f'-{NAMESPACE}'
 
-S3_BUCKET = environ.get('S3_BUCKET', f'preview{NS_AFFIX}')
+S3_BUCKET = environ.get('S3_BUCKET', f'preview-submission{NS_AFFIX}')
 S3_VERIFY = bool(int(environ.get('S3_VERIFY', '1')))
 S3_ENDPOINT = environ.get('S3_ENDPOINT', None)
 AWS_REGION = environ.get('AWS_REGION', 'us-east-1')

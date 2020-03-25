@@ -50,6 +50,8 @@ spec:
         env:
         - name: LOGLEVEL
           value: "{{ .Values.loglevel }}"
+        - name: S3_BUCKET
+          value: "{{ .Values.s3.bucket }}-{{ .Values.namespace }}"
         - name: VAULT_ENABLED
           value: "{{ .Values.vault.enabled  }}"
         - name: VAULT_HOST

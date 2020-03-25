@@ -1,0 +1,53 @@
+version: '3.4'
+x-base-service:
+  &base-service
+  stdin_open: true
+  tty: true
+  environment:
+    DOCKER_HOST: "unix:///var/run/docker.sock"
+    VAULT_ENABLED: "0"
+    NAMESPACE: "development"
+    SQLALCHEMY_TRACK_MODIFICATIONS: 0
+    KUBE_TOKEN: "fookubetoken"
+    VAULT_HOST: "mock-vault"
+    VAULT_PORT: "8200"
+    VAULT_SCHEME: "http"
+
+services:
+  submission-preview-test-localstack:
+    image: atlassianlabs/localstack
+    container_name: preview-test-localstack
+    networks:
+      - arxiv-submission-preview-local
+    ports:
+      - "4572:4572"
+    environment:
+      USE_SSL: 'true'
+      DEBUG: 'true'
+    logging:
+      driver: none
+
+  submission-preview-test:
+    image: arxiv/submission-preview
+    container_name: preview-test
+    networks:
+      - arxiv-submission-preview-local
+    environment:
+      NAMESPACE: "development"
+      SQLALCHEMY_TRACK_MODIFICATIONS: "False"
+      S3_ENDPOINT: "https://submission-preview-test-localstack:4572"
+      S3_VERIFY: 0
+      LOGLEVEL: 40
+      JWT_SECRET: "foosecret"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - submission-preview-test-localstack
+    healthcheck:
+      test: curl --fail -s http://localhost:8000/status || exit 1
+      interval: 20s
+      timeout: 10s
+      retries: 3
+
+networks:
+  arxiv-submission-preview-local:

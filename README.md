@@ -50,9 +50,9 @@ a bucket will be created.
 ### Authentication + Authorization
 
 To use the API you will need an auth token with scopes ``preview:read`` and
-``preview:write``. The easiest way to generate one of these is to use the
+``preview:create``. The easiest way to generate one of these is to use the
 helper script
-[here](https://github.com/arXiv/arxiv-auth/blob/develop/generate_token.py).
+[here](https://github.com/arXiv/arxiv-auth/blob/develop/users/bin/generate-token).
 Make sure that you use the same ``JWT_SECRET`` that is used in
 ``docker-compose.yml``.
 
@@ -68,9 +68,10 @@ curl -XPUT -H "Authorization: [auth token]" http://127.0.0.1:8000/...
 
 ### Creating preview data
 
-TBD
+This will create empty content:
 ```bash
-curl -XPUT -H "Authorization: [auth token]" http://127.0.0.1:8000/
+curl -XPUT -H "Authorization: [auth token]" http://127.0.0.1:8000/12345/bar==/content
+{"added":"2020-03-25T03:14:43.540174+00:00","checksum":"1B2M2Y8AsgTpgAmY7PhCfg==","size_bytes":0}
 ```
 
 ### Checking the submission preview status endpoint

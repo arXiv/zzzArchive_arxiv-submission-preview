@@ -28,7 +28,7 @@ services:
       driver: none
 
   submission-preview-test:
-    image: arxiv/submission-preview:0.1rc1
+    image: arxiv/submission-preview
     container_name: preview-test
     networks:
       - arxiv-submission-preview-local
